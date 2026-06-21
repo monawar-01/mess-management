@@ -2661,12 +2661,6 @@
         where,
         runTransaction,
       } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
-      import {
-        getStorage,
-        ref as storageRef,
-        uploadString,
-        getDownloadURL,
-      } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-storage.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyCvg6Bo6rV3YJv06gtvE5TN7ZX3y9e224E",
@@ -2679,7 +2673,6 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
       const auth = getAuth(app);
-      const storage = getStorage(app);
 
       // Round to nearest integer, ties go away from zero (e.g. 120.5 -> 121, -120.5 -> -121)
       function rAfZ(n, d = 0) {
@@ -2949,9 +2942,9 @@
             name: mgrName,
             phone,
           });
+          await setDoc(doc(db, "users", uid), { flatId, role: "manager" });
           await setDoc(doc(db, "flats", flatId, "state", "meals"), {});
           await setDoc(doc(db, "inviteCodes", inviteCode), { flatId });
-          await setDoc(doc(db, "users", uid), { flatId, role: "manager" });
           document.getElementById("create-invite-code").textContent = inviteCode;
           document.getElementById("create-invite-display").classList.remove("hidden");
           toast("✓ Flat created! You are the Manager.");
@@ -4465,6 +4458,39 @@
         }
       }
 
+      // Resize + compress an image file into a small JPEG data URL (base64), so it fits comfortably
+      // inside a Firestore document (1MB doc limit). Keeps the longer side <= maxDim pixels.
+      async function fileToCompressedBase64(file, maxDim, quality) {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const img = await new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = reject;
+          image.src = dataUrl;
+        });
+        let { width, height } = img;
+        if (width > height && width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else if (height >= width && height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        return canvas.toDataURL("image/jpeg", quality);
+      }
+
       window.onProfilePhotoChange = async function (e) {
         const file = e.target.files && e.target.files[0];
         if (!file || !currentUser) return;
@@ -4472,24 +4498,32 @@
           toast("⚠️ Please choose an image file");
           return;
         }
-        if (file.size > 4 * 1024 * 1024) {
-          toast("⚠️ Image must be under 4MB");
+        if (file.size > 8 * 1024 * 1024) {
+          toast("⚠️ Image must be under 8MB");
           return;
         }
         showLoading("Uploading photo...");
         try {
-          const dataUrl = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
-          const path = `flats/${FLAT_ID}/profile-photos/${currentUser.id}.jpg`;
-          const ref = storageRef(storage, path);
-          await uploadString(ref, dataUrl, "data_url");
-          const url = await getDownloadURL(ref);
-          await updateDoc(doc(db, "flats", FLAT_ID, "members", currentUser.id), { photo: url });
-          currentUser.photo = url;
+          // Try progressively smaller/lower-quality passes until it's small enough for a Firestore doc field.
+          const attempts = [
+            [320, 0.7],
+            [240, 0.55],
+            [160, 0.45],
+          ];
+          let base64 = null;
+          for (const [maxDim, quality] of attempts) {
+            const candidate = await fileToCompressedBase64(file, maxDim, quality);
+            if (candidate.length < 700 * 1024) {
+              base64 = candidate;
+              break;
+            }
+            base64 = candidate; // keep the last attempt as a fallback even if still large
+          }
+          if (!base64 || base64.length > 900 * 1024) {
+            throw new Error("Image too large even after compression, try a simpler photo");
+          }
+          await updateDoc(doc(db, "flats", FLAT_ID, "members", currentUser.id), { photo: base64 });
+          currentUser.photo = base64;
           renderProfile();
           applySidebarUser();
           toast("✓ Profile photo updated!");
