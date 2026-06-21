@@ -1,0 +1,4669 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mess Manager</title>
+    <meta name="theme-color" content="#0A1628" />
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        /* ── Original tokens (kept for full backward compatibility) ── */
+        --bg: #f0f4f8;
+        --card: #fff;
+        --border: #e2e8f0;
+        --text: #1a202c;
+        --muted: #718096;
+        --primary: #3b82f6;
+        --pd: #2563eb;
+        --success: #16a34a;
+        --danger: #dc2626;
+        --warn: #d97706;
+        --sbg: #f0fdf4;
+        --dbg: #fef2f2;
+        --wbg: #fffbeb;
+        --r: 10px;
+
+        /* ── New premium theme tokens ── */
+        --navy: #0a1628;
+        --navy-2: #101f38;
+        --navy-3: #16284a;
+        --gold: #d4af37;
+        --gold-soft: #f0d978;
+        --gold-dim: rgba(212, 175, 55, 0.16);
+        --sidebar-w: 254px;
+        --sidebar-w-collapsed: 76px;
+        --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+        --shadow-md: 0 4px 14px rgba(16, 24, 40, 0.08);
+        --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.12);
+        --shadow-gold: 0 6px 18px rgba(212, 175, 55, 0.28);
+      }
+      html,
+      body {
+        font-family:
+          "Inter",
+          "Segoe UI",
+          "Noto Sans Bengali",
+          "Nirmala UI",
+          "Kalpurush",
+          system-ui,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        height: 100%;
+        overflow: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+      .hidden {
+        display: none !important;
+      }
+      #app {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+      }
+
+      /* ════════════════ AUTH / ONBOARDING SCREENS ════════════════ */
+      #auth-screen {
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(circle at 15% 20%, rgba(212, 175, 55, 0.10), transparent 45%),
+          radial-gradient(circle at 85% 80%, rgba(212, 175, 55, 0.08), transparent 45%),
+          linear-gradient(160deg, #0a1628 0%, #101f38 55%, #16284a 100%);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        overflow-y: auto;
+      }
+      #auth-screen.hidden {
+        display: none;
+      }
+      .auth-box {
+        background: #fff;
+        border-radius: 22px;
+        padding: 36px 30px;
+        max-width: 400px;
+        width: 100%;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+        position: relative;
+      }
+      .auth-logo-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+      .auth-logo-badge {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--navy), var(--navy-3));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: var(--shadow-gold);
+        border: 1px solid var(--gold);
+      }
+      .auth-title {
+        font-size: 23px;
+        font-weight: 800;
+        text-align: center;
+        color: var(--navy);
+        margin-bottom: 4px;
+        letter-spacing: 0.2px;
+      }
+      .auth-sub {
+        font-size: 13px;
+        color: var(--muted);
+        text-align: center;
+        margin-bottom: 26px;
+      }
+      .auth-tabs {
+        display: flex;
+        gap: 6px;
+        background: #f3f4f6;
+        border-radius: 12px;
+        padding: 4px;
+        margin-bottom: 22px;
+      }
+      .auth-tab-btn {
+        flex: 1;
+        padding: 9px 6px;
+        border: none;
+        background: transparent;
+        border-radius: 9px;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--muted);
+        cursor: pointer;
+        transition: 0.18s;
+        white-space: nowrap;
+      }
+      .auth-tab-btn.active {
+        background: var(--navy);
+        color: var(--gold-soft);
+        box-shadow: var(--shadow-sm);
+      }
+      .auth-panel {
+        display: none;
+      }
+      .auth-panel.active {
+        display: block;
+        animation: fadeUp 0.25s ease;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .login-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: block;
+        margin-bottom: 6px;
+      }
+      .login-input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 2px solid var(--border);
+        border-radius: 11px;
+        font-size: 15px;
+        outline: none;
+        transition: 0.2s;
+        background: #fff;
+        color: var(--text);
+      }
+      .login-input:focus {
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px rgba(10, 22, 40, 0.1);
+      }
+      .pwd-wrap {
+        position: relative;
+      }
+      .pwd-wrap .login-input {
+        padding-right: 42px;
+      }
+      .pwd-eye {
+        position: absolute;
+        right: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        line-height: 1;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+      }
+      .pwd-eye:hover {
+        color: var(--text);
+        background: rgba(0, 0, 0, 0.05);
+      }
+      .pwd-eye.is-visible {
+        color: var(--navy);
+      }
+      .eye-ico {
+        width: 20px;
+        height: 20px;
+      }
+      .eye-ico .eye-slash {
+        display: none;
+      }
+      .pwd-eye.is-visible .eye-ico .eye-pupil,
+      .pwd-eye.is-visible .eye-ico .eye-outline {
+        display: none;
+      }
+      .pwd-eye.is-visible .eye-ico .eye-slash {
+        display: inline;
+      }
+      .login-btn {
+        width: 100%;
+        padding: 13px;
+        background: linear-gradient(135deg, var(--navy), var(--navy-3));
+        color: var(--gold-soft);
+        border: 1px solid var(--gold);
+        border-radius: 11px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 16px;
+        transition: 0.18s;
+      }
+      .login-btn:hover {
+        box-shadow: var(--shadow-gold);
+        transform: translateY(-1px);
+      }
+      .login-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .login-err {
+        color: var(--danger);
+        font-size: 12px;
+        text-align: center;
+        margin-top: 10px;
+        min-height: 18px;
+      }
+      .login-hint {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 4px;
+        margin-bottom: 4px;
+      }
+      .invite-display {
+        background: var(--gold-dim);
+        border: 1.5px dashed var(--gold);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        margin-top: 16px;
+      }
+      .invite-code-big {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: 3px;
+        color: var(--navy);
+        font-family: monospace;
+        margin: 6px 0;
+      }
+
+      #loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 22, 40, 0.92);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 14px;
+      }
+      #loading-overlay.hidden {
+        display: none;
+      }
+      .spinner {
+        width: 38px;
+        height: 38px;
+        border: 4px solid rgba(212, 175, 55, 0.25);
+        border-top-color: var(--gold);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      #loading-overlay div + div {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 13px;
+        font-weight: 500;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ════════════════ APP SHELL / SIDEBAR ════════════════ */
+      .app-shell {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        background: var(--bg);
+      }
+      .sidebar {
+        width: var(--sidebar-w);
+        flex-shrink: 0;
+        background: linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+        z-index: 50;
+        transition: transform 0.25s ease;
+      }
+      .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 20px 18px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        flex-shrink: 0;
+      }
+      .sidebar-brand-badge {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: var(--gold-dim);
+        border: 1px solid var(--gold);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+        flex-shrink: 0;
+      }
+      .sidebar-brand-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .sidebar-brand-title {
+        font-size: 15.5px;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .sidebar-brand-sub {
+        font-size: 10.5px;
+        color: var(--gold-soft);
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 160px;
+      }
+      .sidebar-close-btn {
+        display: none;
+        background: rgba(255, 255, 255, 0.08);
+        border: none;
+        color: #fff;
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        font-size: 15px;
+        cursor: pointer;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+      .sidebar-nav {
+        flex: 1;
+        overflow-y: auto;
+        padding: 14px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .sidebar-nav::-webkit-scrollbar {
+        width: 5px;
+      }
+      .sidebar-nav::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+      }
+      .snav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 13px;
+        border-radius: 10px;
+        color: rgba(255, 255, 255, 0.68);
+        font-size: 13.6px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        position: relative;
+        transition: 0.15s;
+        user-select: none;
+      }
+      .snav-item:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+      }
+      .snav-item.active {
+        background: var(--gold-dim);
+        color: var(--gold-soft);
+      }
+      .snav-item.active::before {
+        content: "";
+        position: absolute;
+        left: -10px;
+        top: 8px;
+        bottom: 8px;
+        width: 3px;
+        border-radius: 0 4px 4px 0;
+        background: var(--gold);
+      }
+      .snav-icon {
+        font-size: 16.5px;
+        width: 20px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+      .snav-badge {
+        margin-left: auto;
+        background: var(--danger);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        min-width: 17px;
+        height: 17px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+      }
+      .sidebar-divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 8px 13px;
+      }
+      .sidebar-foot {
+        flex-shrink: 0;
+        padding: 14px 14px 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .sidebar-user-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: 0.15s;
+      }
+      .sidebar-user-row:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .sidebar-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--gold), #b8902a);
+        color: var(--navy);
+        font-weight: 800;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        overflow: hidden;
+        border: 2px solid rgba(212, 175, 55, 0.4);
+      }
+      .sidebar-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .sidebar-user-info {
+        min-width: 0;
+        flex: 1;
+      }
+      .sidebar-user-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .sidebar-user-role {
+        font-size: 10.5px;
+        color: var(--gold-soft);
+        font-weight: 600;
+      }
+      .sidebar-signout-btn {
+        width: 100%;
+        margin-top: 10px;
+        padding: 9px;
+        border-radius: 9px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 12.5px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: 0.15s;
+      }
+      .sidebar-signout-btn:hover {
+        background: rgba(220, 38, 38, 0.18);
+        border-color: rgba(220, 38, 38, 0.4);
+        color: #fca5a5;
+      }
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 49;
+      }
+      .sidebar-overlay.show {
+        display: block;
+      }
+
+      /* Mobile topbar (hamburger + bell) */
+      .mobile-topbar {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--navy);
+        color: #fff;
+        padding: 12px 14px;
+        flex-shrink: 0;
+        z-index: 40;
+      }
+      .hamburger-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #fff;
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        font-size: 17px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .mobile-topbar .mt-title {
+        font-size: 14.5px;
+        font-weight: 800;
+        color: var(--gold-soft);
+        flex: 1;
+        text-align: center;
+      }
+      .bell-btn {
+        position: relative;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #fff;
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        cursor: pointer;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .bell-btn:hover {
+        background: rgba(255, 255, 255, 0.18);
+      }
+      .bell-dot {
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        background: #ef4444;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 700;
+        min-width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid var(--navy);
+      }
+
+      .main-col {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        min-height: 0;
+        position: relative;
+      }
+      .main-col:has(#page-chat.active) {
+        overflow: hidden;
+      }
+      .main-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 26px;
+        background: var(--card);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        flex-wrap: wrap;
+      }
+      .main-topbar-title {
+        font-size: 19px;
+        font-weight: 800;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .main-topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .month-badge {
+        font-size: 12px;
+        background: var(--gold-dim);
+        color: #92400e;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-weight: 700;
+        white-space: nowrap;
+        border: 1px solid rgba(212, 175, 55, 0.4);
+      }
+
+      @media (min-width: 761px) {
+        .mobile-topbar {
+          display: none !important;
+        }
+      }
+      @media (max-width: 760px) {
+        .mobile-topbar {
+          display: flex;
+        }
+        .sidebar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          height: 100%;
+          transform: translateX(-100%);
+          box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
+        }
+        .sidebar.open {
+          transform: translateX(0);
+        }
+        .sidebar-close-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .main-topbar {
+          padding: 12px 14px;
+        }
+        .main-topbar-title {
+          font-size: 16px;
+        }
+        .main-topbar-right .bell-btn {
+          display: none;
+        }
+      }
+
+      /* ════════════════ PAGES / CARDS (kept from original, restyled) ════════════════ */
+      .page {
+        display: none;
+        padding: 22px 26px;
+        width: 100%;
+      }
+      .page.active {
+        display: block;
+        animation: fadeUp 0.2s ease;
+      }
+      #page-chat.active {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+      }
+      .card {
+        background: var(--card);
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        padding: 18px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow-sm);
+      }
+      .card-title {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .stat {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px 16px;
+        box-shadow: var(--shadow-sm);
+        transition: 0.15s;
+      }
+      .stat:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+      }
+      .stat-lbl {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+        font-weight: 700;
+      }
+      .stat-val {
+        font-size: 22px;
+        font-weight: 800;
+      }
+      .green {
+        color: var(--success);
+      }
+      .red {
+        color: var(--danger);
+      }
+      .blue {
+        color: var(--primary);
+      }
+      .warn {
+        color: var(--warn);
+      }
+      .gold-text {
+        color: #92400e;
+      }
+      label.lbl {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      input[type="text"],
+      input[type="number"],
+      input[type="date"],
+      input[type="tel"],
+      input[type="password"],
+      input[type="file"],
+      select {
+        width: 100%;
+        padding: 9px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 13px;
+        color: var(--text);
+        outline: none;
+        background: var(--card);
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px rgba(10, 22, 40, 0.08);
+      }
+      .btn {
+        padding: 9px 15px;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+        transition: 0.15s;
+      }
+      .btn-primary {
+        background: var(--navy);
+        color: var(--gold-soft);
+      }
+      .btn-primary:hover {
+        background: var(--navy-3);
+        box-shadow: var(--shadow-gold);
+      }
+      .btn-success {
+        background: var(--success);
+        color: #fff;
+      }
+      .btn-success:hover {
+        background: #15803d;
+      }
+      .btn-danger {
+        background: var(--danger);
+        color: #fff;
+      }
+      .btn-danger-o {
+        background: transparent;
+        color: var(--danger);
+        border: 1px solid var(--border);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--border);
+      }
+      .btn-ghost:hover {
+        background: var(--bg);
+      }
+      .btn-gold {
+        background: linear-gradient(135deg, var(--gold), #b8902a);
+        color: var(--navy);
+      }
+      .btn-gold:hover {
+        box-shadow: var(--shadow-gold);
+      }
+      .btn-sm {
+        padding: 6px 11px;
+        font-size: 12px;
+      }
+      .btn-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 20px;
+      }
+      .bg {
+        background: var(--sbg);
+        color: var(--success);
+      }
+      .br {
+        background: var(--dbg);
+        color: var(--danger);
+      }
+      .bb {
+        background: #eff6ff;
+        color: var(--primary);
+      }
+      .badge-manager {
+        background: var(--gold-dim);
+        color: #8a6d1f;
+        border: 1px solid rgba(212, 175, 55, 0.5);
+      }
+      .badge-member {
+        background: #eff6ff;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+      }
+      .toast {
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--navy);
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        display: none;
+        align-items: center;
+        gap: 6px;
+        z-index: 9999;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+      }
+      .empty {
+        text-align: center;
+        padding: 32px 16px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 22, 40, 0.55);
+        z-index: 200;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 380px;
+        width: 90%;
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: var(--shadow-lg);
+      }
+      .modal h3 {
+        font-size: 16px;
+        font-weight: 800;
+        margin-bottom: 8px;
+      }
+      .modal p {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 18px;
+        line-height: 1.6;
+      }
+      .form-g {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .g2 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .g3 {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      /* SHEET */
+      .sheet-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .sheet {
+        border-collapse: collapse;
+        font-size: 12px;
+        min-width: max-content;
+      }
+      .sheet th,
+      .sheet td {
+        border: 1px solid var(--border);
+        text-align: center;
+        padding: 0;
+      }
+      .sheet .sh-head {
+        background: var(--navy);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 6px 8px;
+        white-space: nowrap;
+      }
+      .sheet .sh-name {
+        background: #f8fafc;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 8px 12px;
+        text-align: left;
+        white-space: nowrap;
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        border-right: 2px solid var(--border);
+      }
+      .sheet .sh-date-head {
+        background: var(--navy);
+        color: #fff;
+        font-weight: 700;
+        padding: 5px 6px;
+        min-width: 38px;
+      }
+      .sheet td.cell {
+        padding: 2px;
+        width: 38px;
+      }
+      .sheet td.cell input {
+        width: 38px;
+        height: 32px;
+        border: none;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+        background: transparent;
+        padding: 0;
+        color: var(--text);
+      }
+      .sheet td.cell input:focus {
+        background: #eff6ff;
+        outline: none;
+      }
+      .sheet td.cell input.has-val {
+        background: #f0fdf4;
+        color: var(--success);
+      }
+      .sheet td.cell input[readonly] {
+        cursor: default;
+      }
+      .sheet .sh-total {
+        background: #fef9c3;
+        font-weight: 700;
+        padding: 6px 8px;
+        font-size: 13px;
+      }
+      .sheet .sh-cost {
+        background: #fde68a;
+        font-weight: 700;
+        padding: 6px 8px;
+        font-size: 13px;
+        color: #92400e;
+      }
+      .sheet .sh-bal-pos {
+        background: #dcfce7;
+        font-weight: 700;
+        padding: 6px 8px;
+        color: #166534;
+      }
+      .sheet .sh-bal-neg {
+        background: #fee2e2;
+        font-weight: 700;
+        padding: 6px 8px;
+        color: #991b1b;
+      }
+      .sheet .sh-rate {
+        background: #dbeafe;
+        font-weight: 700;
+        padding: 6px 8px;
+        color: #1e40af;
+      }
+      .legend {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .legend span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .legend .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+      }
+      .item-row {
+        display: grid;
+        grid-template-columns: 1fr 100px 32px;
+        gap: 6px;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .del-icon {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #ccc;
+        font-size: 16px;
+        padding: 4px;
+        border-radius: 4px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .del-icon:hover {
+        color: var(--danger);
+        background: var(--dbg);
+      }
+      .divider {
+        height: 1px;
+        background: var(--border);
+        margin: 10px 0;
+      }
+      table.simple {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      table.simple th {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+      }
+      table.simple td {
+        padding: 9px 10px;
+        border-bottom: 1px solid #f7f8fa;
+        vertical-align: middle;
+      }
+      table.simple tr:last-child td {
+        border-bottom: none;
+      }
+      table.simple tr:hover td {
+        background: #fafbff;
+      }
+      .readonly-notice {
+        background: var(--gold-dim);
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 12px;
+        color: #92400e;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .vote-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: 0.15s;
+      }
+      .vote-option:hover {
+        background: #eff6ff;
+        border-color: var(--navy);
+      }
+      .vote-option.selected {
+        background: var(--gold-dim);
+        border-color: var(--gold);
+      }
+      .vote-bar-wrap {
+        background: #f0f4f8;
+        border-radius: 4px;
+        height: 8px;
+        flex: 1;
+        margin: 0 10px;
+      }
+      .vote-bar {
+        background: linear-gradient(90deg, var(--navy), var(--navy-3));
+        border-radius: 4px;
+        height: 100%;
+        transition: 0.4s;
+      }
+      .manager-banner {
+        background: linear-gradient(135deg, var(--gold), #b8902a);
+        color: var(--navy);
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .notif-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: 300;
+        display: none;
+      }
+      .notif-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 320px;
+        max-width: 92vw;
+        height: 100vh;
+        background: var(--card);
+        box-shadow: -6px 0 24px rgba(0, 0, 0, 0.18);
+        z-index: 301;
+        display: flex;
+        flex-direction: column;
+      }
+      .notif-panel-head {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--navy);
+        color: #fff;
+      }
+      .notif-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+      }
+      .notif-item {
+        background: var(--bg);
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        border-left: 3px solid var(--navy);
+      }
+      .notif-item.unread {
+        background: var(--gold-dim);
+        border-left-color: var(--gold);
+      }
+      .notif-item-time {
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 5px;
+      }
+      .req-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+      }
+      .req-card .req-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+      }
+      .req-status {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 9px;
+        border-radius: 20px;
+      }
+      .req-status.pending {
+        background: #fef9c3;
+        color: #92400e;
+      }
+      .req-status.approved {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .req-status.rejected {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .contact-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 10px;
+      }
+      .contact-card .c-label {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .contact-card .c-name {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 2px;
+      }
+      .contact-card .c-phone {
+        font-size: 14px;
+        color: var(--primary);
+        font-weight: 600;
+      }
+      .contact-card a {
+        color: var(--primary);
+        text-decoration: none;
+      }
+      /* CHAT */
+      .chat-wrap {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 320px;
+      }
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 6px 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .chat-msg {
+        max-width: 78%;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .chat-msg.mine {
+        align-self: flex-end;
+        align-items: flex-end;
+      }
+      .chat-msg.theirs {
+        align-self: flex-start;
+        align-items: flex-start;
+      }
+      .chat-bubble {
+        padding: 9px 13px;
+        border-radius: 14px;
+        font-size: 14px;
+        line-height: 1.4;
+        word-break: break-word;
+      }
+      .chat-msg.mine .chat-bubble {
+        background: var(--navy);
+        color: #fff;
+        border-bottom-right-radius: 4px;
+      }
+      .chat-msg.theirs .chat-bubble {
+        background: #eef1f5;
+        color: var(--text);
+        border-bottom-left-radius: 4px;
+      }
+      .chat-meta {
+        font-size: 10.5px;
+        color: var(--muted);
+        padding: 0 4px;
+      }
+      .chat-sender {
+        font-weight: 700;
+      }
+      .chat-input-row {
+        display: flex;
+        gap: 8px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .chat-input-row input {
+        flex: 1;
+      }
+      .chat-send-btn {
+        background: var(--navy);
+        color: var(--gold-soft);
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-size: 16px;
+        cursor: pointer;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .chat-send-btn:hover {
+        background: var(--navy-3);
+      }
+
+      /* ════════════════ DASHBOARD PAGE ════════════════ */
+      .dash-hero {
+        background: linear-gradient(135deg, var(--navy) 0%, var(--navy-3) 100%);
+        border-radius: 16px;
+        padding: 22px 24px;
+        color: #fff;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        box-shadow: var(--shadow-md);
+      }
+      .dash-hero-title {
+        font-size: 19px;
+        font-weight: 800;
+        margin-bottom: 4px;
+      }
+      .dash-hero-sub {
+        font-size: 12.5px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .dash-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .dash-card {
+        background: var(--card);
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        padding: 16px;
+        box-shadow: var(--shadow-sm);
+      }
+      .dash-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+      .dash-card-head h4 {
+        font-size: 13.5px;
+        font-weight: 700;
+      }
+      .dash-list-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 13px;
+      }
+      .dash-list-row:last-child {
+        border-bottom: none;
+      }
+      .dash-progress-wrap {
+        background: #f0f4f8;
+        border-radius: 5px;
+        height: 9px;
+        width: 100%;
+        overflow: hidden;
+        margin-top: 6px;
+      }
+      .dash-progress-bar {
+        height: 100%;
+        border-radius: 5px;
+        background: linear-gradient(90deg, var(--gold), #b8902a);
+        transition: width 0.4s ease;
+      }
+
+      /* ════════════════ PROFILE PAGE ════════════════ */
+      .profile-hero {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        background: linear-gradient(135deg, var(--navy), var(--navy-3));
+        border-radius: 16px;
+        padding: 24px;
+        color: #fff;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+        box-shadow: var(--shadow-md);
+      }
+      .profile-avatar-wrap {
+        position: relative;
+        width: 86px;
+        height: 86px;
+        flex-shrink: 0;
+      }
+      .profile-avatar {
+        width: 86px;
+        height: 86px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--gold), #b8902a);
+        color: var(--navy);
+        font-weight: 800;
+        font-size: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border: 3px solid rgba(212, 175, 55, 0.5);
+      }
+      .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .profile-avatar-edit {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--gold);
+        color: var(--navy);
+        border: 2px solid var(--navy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .profile-hero-name {
+        font-size: 20px;
+        font-weight: 800;
+      }
+      .profile-hero-meta {
+        font-size: 12.5px;
+        color: rgba(255, 255, 255, 0.72);
+        margin-top: 3px;
+      }
+      .invite-box {
+        background: var(--gold-dim);
+        border: 1.5px dashed var(--gold);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .invite-box-code {
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: 3px;
+        color: var(--navy);
+        font-family: monospace;
+      }
+
+      @media (max-width: 600px) {
+        .g2,
+        .g3 {
+          grid-template-columns: 1fr;
+        }
+        .page {
+          padding: 12px;
+        }
+        .profile-hero {
+          flex-direction: column;
+          text-align: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div>Loading...</div>
+    </div>
+
+    <!-- ════════════════ AUTH SCREEN: Login / Create Flat / Join Flat ════════════════ -->
+    <div id="auth-screen" class="hidden">
+      <div class="auth-box">
+        <div class="auth-logo-row">
+          <div class="auth-logo-badge">🍛</div>
+        </div>
+        <div class="auth-title">Mess Manager</div>
+        <div class="auth-sub" id="auth-sub-text">Manage your flat's meals, money &amp; more</div>
+
+        <div class="auth-tabs">
+          <button class="auth-tab-btn active" id="auth-tab-login" onclick="switchAuthTab('login')">🔑 Login</button>
+          <button class="auth-tab-btn" id="auth-tab-create" onclick="switchAuthTab('create')">🏠 Create Flat</button>
+          <button class="auth-tab-btn" id="auth-tab-join" onclick="switchAuthTab('join')">➕ Join Flat</button>
+        </div>
+
+        <!-- LOGIN PANEL -->
+        <div class="auth-panel active" id="auth-panel-login">
+          <label class="login-label">Mobile Number</label>
+          <input
+            class="login-input"
+            type="tel"
+            id="login-phone"
+            placeholder="01XXXXXXXXX"
+            maxlength="11"
+            oninput="this.value = this.value.replace(/\D/g, '')"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('login-password').focus();}"
+          />
+          <label class="login-label" style="margin-top: 10px">Password</label>
+          <div class="pwd-wrap">
+            <input
+              class="login-input"
+              type="password"
+              id="login-password"
+              placeholder="Enter password"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();doLogin();}"
+            />
+            <button type="button" class="pwd-eye" onclick="togglePwd('login-password', this)" tabindex="-1">
+              <svg class="eye-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path class="eye-outline" d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                <circle class="eye-pupil" cx="12" cy="12" r="3"></circle>
+                <g class="eye-slash">
+                  <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.3A10.4 10.4 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-2.4 3.1M6.2 6.2A13 13 0 0 0 1 12s4 7 11 7a10.2 10.2 0 0 0 4.2-.9"></path>
+                </g>
+              </svg>
+            </button>
+          </div>
+          <div class="login-hint">Don't have an account? Use "Create Flat" or "Join Flat" above.</div>
+          <button class="login-btn" onclick="doLogin()" id="login-btn">Log In →</button>
+          <div class="login-err" id="login-err"></div>
+        </div>
+
+        <!-- CREATE FLAT PANEL -->
+        <div class="auth-panel" id="auth-panel-create">
+          <label class="login-label">Flat Name</label>
+          <input class="login-input" type="text" id="create-flatname" placeholder="e.g. Green Road Mess" />
+          <label class="login-label" style="margin-top: 10px">Your Name</label>
+          <input class="login-input" type="text" id="create-mgrname" placeholder="Your name" />
+          <label class="login-label" style="margin-top: 10px">Phone</label>
+          <input
+            class="login-input"
+            type="tel"
+            id="create-phone"
+            placeholder="01XXXXXXXXX"
+            maxlength="11"
+            oninput="this.value = this.value.replace(/\D/g, '')"
+          />
+          <label class="login-label" style="margin-top: 10px">Password</label>
+          <div class="pwd-wrap">
+            <input class="login-input" type="password" id="create-password" placeholder="Create a password" onkeydown="if(event.key==='Enter'){event.preventDefault();doCreateFlat();}" />
+            <button type="button" class="pwd-eye" onclick="togglePwd('create-password', this)" tabindex="-1">
+              <svg class="eye-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path class="eye-outline" d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                <circle class="eye-pupil" cx="12" cy="12" r="3"></circle>
+                <g class="eye-slash"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.3A10.4 10.4 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-2.4 3.1M6.2 6.2A13 13 0 0 0 1 12s4 7 11 7a10.2 10.2 0 0 0 4.2-.9"></path></g>
+              </svg>
+            </button>
+          </div>
+          <button class="login-btn" onclick="doCreateFlat()" id="create-btn">Create Flat &amp; Become Manager →</button>
+          <div class="login-err" id="create-err"></div>
+          <div class="invite-display hidden" id="create-invite-display">
+            <div style="font-size: 12px; color: #92400e; font-weight: 700">🎉 Flat created! Share this Invite Code</div>
+            <div class="invite-code-big" id="create-invite-code">------</div>
+            <button class="btn btn-gold btn-sm" onclick="copyInviteCode('create-invite-code')">📋 Copy Code</button>
+          </div>
+        </div>
+
+        <!-- JOIN FLAT PANEL -->
+        <div class="auth-panel" id="auth-panel-join">
+          <label class="login-label">Invite Code</label>
+          <input class="login-input" type="text" id="join-code" placeholder="e.g. ABC123" style="text-transform: uppercase" />
+          <label class="login-label" style="margin-top: 10px">Your Name</label>
+          <input class="login-input" type="text" id="join-name" placeholder="Enter name" />
+          <label class="login-label" style="margin-top: 10px">Phone</label>
+          <input
+            class="login-input"
+            type="tel"
+            id="join-phone"
+            placeholder="01XXXXXXXXX"
+            maxlength="11"
+            oninput="this.value = this.value.replace(/\D/g, '')"
+          />
+          <label class="login-label" style="margin-top: 10px">Password</label>
+          <div class="pwd-wrap">
+            <input class="login-input" type="password" id="join-password" placeholder="Create a password" onkeydown="if(event.key==='Enter'){event.preventDefault();doJoinFlat();}" />
+            <button type="button" class="pwd-eye" onclick="togglePwd('join-password', this)" tabindex="-1">
+              <svg class="eye-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path class="eye-outline" d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                <circle class="eye-pupil" cx="12" cy="12" r="3"></circle>
+                <g class="eye-slash"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.3A10.4 10.4 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-2.4 3.1M6.2 6.2A13 13 0 0 0 1 12s4 7 11 7a10.2 10.2 0 0 0 4.2-.9"></path></g>
+              </svg>
+            </button>
+          </div>
+          <button class="login-btn" onclick="doJoinFlat()" id="join-btn">Join Flat →</button>
+          <div class="login-err" id="join-err"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ MAIN APP ════════════════ -->
+    <div id="app" style="display: none">
+      <div class="mobile-topbar">
+        <button class="hamburger-btn" onclick="openSidebar()" title="Menu">☰</button>
+        <div class="mt-title">🍛 Mess Manager</div>
+        <button class="bell-btn" onclick="openNotifPanel()" title="Notifications">
+          🔔<span class="bell-dot" id="bell-dot-m" style="display: none">0</span>
+        </button>
+      </div>
+
+      <div class="app-shell">
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+        <div class="sidebar" id="sidebar">
+          <div class="sidebar-brand">
+            <div class="sidebar-brand-badge">🍛</div>
+            <div class="sidebar-brand-text">
+              <div class="sidebar-brand-title">Mess Manager</div>
+              <div class="sidebar-brand-sub" id="sidebar-flat-name">My Flat</div>
+            </div>
+            <button class="sidebar-close-btn" onclick="closeSidebar()">✕</button>
+          </div>
+          <div class="sidebar-nav">
+            <div class="snav-item active" data-tab="sheet" onclick="gotoTab('sheet')">
+              <span class="snav-icon">🍽</span> Meal Records
+            </div>
+            <div class="snav-item" data-tab="bazaar" onclick="gotoTab('bazaar')">
+              <span class="snav-icon">🛒</span> Bazaar
+            </div>
+            <div class="snav-item" data-tab="deposit" onclick="gotoTab('deposit')">
+              <span class="snav-icon">💰</span> Deposits
+            </div>
+            <div class="snav-item" data-tab="bills" onclick="gotoTab('bills')">
+              <span class="snav-icon">🧾</span> Bills
+            </div>
+            <div class="snav-item" data-tab="dashboard" onclick="gotoTab('dashboard')">
+              <span class="snav-icon">📈</span> Dashboard
+            </div>
+            <div class="snav-item" data-tab="members" onclick="gotoTab('members')">
+              <span class="snav-icon">👥</span> Members
+            </div>
+            <div class="snav-item" data-tab="profile" onclick="gotoTab('profile')">
+              <span class="snav-icon">👤</span> My Profile
+            </div>
+            <div class="snav-item" data-tab="info" onclick="gotoTab('info')">
+              <span class="snav-icon">📇</span> Information
+            </div>
+            <div class="snav-item" data-tab="mealoff" onclick="gotoTab('mealoff')">
+              <span class="snav-icon">📢</span> Announcement
+            </div>
+            <div class="snav-item" data-tab="chat" onclick="gotoTab('chat')">
+              <span class="snav-icon">💬</span> Chat
+            </div>
+            <div class="snav-item" data-tab="vote" onclick="gotoTab('vote')">
+              <span class="snav-icon">🗳</span> Vote
+            </div>
+          </div>
+          <div class="sidebar-foot">
+            <div class="sidebar-user-row" onclick="gotoTab('profile')">
+              <div class="sidebar-avatar" id="sidebar-avatar">👤</div>
+              <div class="sidebar-user-info">
+                <div class="sidebar-user-name" id="sidebar-user-name">...</div>
+                <div class="sidebar-user-role" id="sidebar-user-role">Member</div>
+              </div>
+            </div>
+            <button class="sidebar-signout-btn" onclick="doLogout()">⏻ Sign Out</button>
+          </div>
+        </div>
+
+        <div class="main-col">
+          <div class="main-topbar">
+            <div class="main-topbar-title"><span id="page-title-icon">🍽</span> <span id="page-title-text">Meal Records</span></div>
+            <div class="main-topbar-right">
+              <span class="month-badge" id="month-label"></span>
+              <button class="bell-btn" onclick="openNotifPanel()" title="Notifications" style="background:var(--bg);color:var(--text)">
+                🔔<span class="bell-dot" id="bell-dot" style="display: none">0</span>
+              </button>
+            </div>
+          </div>
+          <div class="page active" id="page-sheet">
+            <div class="card">
+              <div class="card-title">
+                <span>📊 Monthly Meal Sheet</span>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                  <select
+                    id="sheet-month-sel"
+                    style="width: auto; padding: 6px 8px; font-size: 12px"
+                    onchange="renderSheet()"
+                  ></select>
+                  <button class="btn btn-ghost btn-sm" onclick="exportCSV()">
+                    ⬇ Export
+                  </button>
+                </div>
+              </div>
+              <div
+                id="sheet-readonly-notice"
+                class="readonly-notice"
+                style="display: none"
+              >
+                👁️ View only. Manager access required to edit.
+              </div>
+              <div class="legend">
+                <span
+                  ><div
+                    class="dot"
+                    style="background: #f0fdf4; border: 1px solid #86efac"
+                  ></div>
+                  Meal entered</span
+                >
+                <span
+                  ><div
+                    class="dot"
+                    style="background: #fef9c3; border: 1px solid #fde047"
+                  ></div>
+                  Total meals</span
+                >
+                <span
+                  ><div
+                    class="dot"
+                    style="background: #fde68a; border: 1px solid #fbbf24"
+                  ></div>
+                  Cost (Tk)</span
+                >
+                <span
+                  ><div
+                    class="dot"
+                    style="background: #dcfce7; border: 1px solid #86efac"
+                  ></div>
+                  Will receive</span
+                >
+                <span
+                  ><div
+                    class="dot"
+                    style="background: #fee2e2; border: 1px solid #fca5a5"
+                  ></div>
+                  Will pay</span
+                >
+              </div>
+              <div class="sheet-wrap" id="sheet-container"></div>
+            </div>
+          </div>
+
+          <!-- BAZAAR -->
+          <div class="page" id="page-bazaar">
+            <div
+              id="bazaar-readonly-notice"
+              class="readonly-notice"
+              style="display: none"
+            >
+              👁️ View only access to Bazaar history.
+            </div>
+            <div class="card" id="bazaar-add-card">
+              <div class="card-title"><span>🛒 Add Bazaar Entry</span></div>
+              <div class="form-g" style="grid-template-columns: 1fr">
+                <div>
+                  <label class="lbl">Date</label
+                  ><input type="date" id="baz-date" />
+                </div>
+              </div>
+              <div class="divider"></div>
+              <div
+                style="
+                  font-size: 11px;
+                  font-weight: 700;
+                  color: var(--muted);
+                  margin-bottom: 8px;
+                "
+              >
+                🛒 Items
+              </div>
+              <div id="baz-items">
+                <div class="item-row" data-idx="0">
+                  <input
+                    type="text"
+                    class="baz-item-name"
+                    placeholder="Item name (e.g. Rice, Fish)"
+                  /><input
+                    type="number"
+                    class="baz-item-cost"
+                    placeholder="Cost (Tk)"
+                    min="0"
+                    oninput="calcBazTotal()"
+                  /><button
+                    class="del-icon"
+                    onclick="removeBazItem(this)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div class="item-row" data-idx="1" style="display: none">
+                  <input
+                    type="text"
+                    class="baz-item-name"
+                    placeholder="Item name (e.g. Rice, Fish)"
+                  /><input
+                    type="number"
+                    class="baz-item-cost"
+                    placeholder="Cost (Tk)"
+                    min="0"
+                    oninput="calcBazTotal()"
+                  /><button
+                    class="del-icon"
+                    onclick="removeBazItem(this)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div class="item-row" data-idx="2" style="display: none">
+                  <input
+                    type="text"
+                    class="baz-item-name"
+                    placeholder="Item name (e.g. Rice, Fish)"
+                  /><input
+                    type="number"
+                    class="baz-item-cost"
+                    placeholder="Cost (Tk)"
+                    min="0"
+                    oninput="calcBazTotal()"
+                  /><button
+                    class="del-icon"
+                    onclick="removeBazItem(this)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div class="item-row" data-idx="3" style="display: none">
+                  <input
+                    type="text"
+                    class="baz-item-name"
+                    placeholder="Item name (e.g. Rice, Fish)"
+                  /><input
+                    type="number"
+                    class="baz-item-cost"
+                    placeholder="Cost (Tk)"
+                    min="0"
+                    oninput="calcBazTotal()"
+                  /><button
+                    class="del-icon"
+                    onclick="removeBazItem(this)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div class="item-row" data-idx="4" style="display: none">
+                  <input
+                    type="text"
+                    class="baz-item-name"
+                    placeholder="Item name (e.g. Rice, Fish)"
+                  /><input
+                    type="number"
+                    class="baz-item-cost"
+                    placeholder="Cost (Tk)"
+                    min="0"
+                    oninput="calcBazTotal()"
+                  /><button
+                    class="del-icon"
+                    onclick="removeBazItem(this)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div class="item-row" data-idx="5" style="display: none">
+                  <input
+                    type="text"
+                    class="baz-item-name"
+                    placeholder="Item name (e.g. Rice, Fish)"
+                  /><input
+                    type="number"
+                    class="baz-item-cost"
+                    placeholder="Cost (Tk)"
+                    min="0"
+                    oninput="calcBazTotal()"
+                  /><button
+                    class="del-icon"
+                    onclick="removeBazItem(this)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div class="item-row" data-idx="6" style="display: none">
+                  <input
+                    type="text"
+                    class="baz-item-name"
+                    placeholder="Item name (e.g. Rice, Fish)"
+                  /><input
+                    type="number"
+                    class="baz-item-cost"
+                    placeholder="Cost (Tk)"
+                    min="0"
+                    oninput="calcBazTotal()"
+                  /><button
+                    class="del-icon"
+                    onclick="removeBazItem(this)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div class="item-row" data-idx="7" style="display: none">
+                  <input
+                    type="text"
+                    class="baz-item-name"
+                    placeholder="Item name (e.g. Rice, Fish)"
+                  /><input
+                    type="number"
+                    class="baz-item-cost"
+                    placeholder="Cost (Tk)"
+                    min="0"
+                    oninput="calcBazTotal()"
+                  /><button
+                    class="del-icon"
+                    onclick="removeBazItem(this)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div class="item-row" data-idx="8" style="display: none">
+                  <input
+                    type="text"
+                    class="baz-item-name"
+                    placeholder="Item name (e.g. Rice, Fish)"
+                  /><input
+                    type="number"
+                    class="baz-item-cost"
+                    placeholder="Cost (Tk)"
+                    min="0"
+                    oninput="calcBazTotal()"
+                  /><button
+                    class="del-icon"
+                    onclick="removeBazItem(this)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div class="item-row" data-idx="9" style="display: none">
+                  <input
+                    type="text"
+                    class="baz-item-name"
+                    placeholder="Item name (e.g. Rice, Fish)"
+                  /><input
+                    type="number"
+                    class="baz-item-cost"
+                    placeholder="Cost (Tk)"
+                    min="0"
+                    oninput="calcBazTotal()"
+                  /><button
+                    class="del-icon"
+                    onclick="removeBazItem(this)"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <button
+                class="btn btn-ghost btn-sm"
+                onclick="addBazItem()"
+                style="margin-bottom: 10px"
+              >
+                + Add item
+              </button>
+              <div class="divider"></div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                "
+              >
+                <span
+                  style="font-size: 13px; font-weight: 700; color: var(--muted)"
+                  >Total cost</span
+                >
+                <span
+                  style="
+                    font-size: 22px;
+                    font-weight: 700;
+                    color: var(--primary);
+                  "
+                  ><span id="baz-total">৳ 0</span>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary" onclick="saveBazaar()">
+                  ✓ Save Entry
+                </button>
+                <button class="btn btn-ghost" onclick="clearBazForm()">
+                  ✕ Clear
+                </button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span>📋 Bazaar History</span></div>
+              <div id="baz-history"></div>
+            </div>
+          </div>
+
+          <!-- DEPOSIT -->
+          <div class="page" id="page-deposit">
+            <div
+              id="deposit-readonly-notice"
+              class="readonly-notice"
+              style="display: none"
+            >
+              👁️ Viewing your own deposit history. Only the Manager can add, edit, or delete deposits.
+            </div>
+            <div class="card" id="deposit-add-card">
+              <div class="card-title"><span>💰 Add Deposit</span></div>
+              <div class="form-g g3">
+                <div>
+                  <label class="lbl">Member</label
+                  ><select id="dep-mem"></select>
+                </div>
+                <div>
+                  <label class="lbl">Amount (Tk)</label
+                  ><input
+                    type="number"
+                    id="dep-amt"
+                    placeholder="3000"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label class="lbl">Date</label
+                  ><input type="date" id="dep-date" />
+                </div>
+              </div>
+              <div class="form-g">
+                <div>
+                  <label class="lbl">Note (optional)</label
+                  ><input
+                    type="text"
+                    id="dep-note"
+                    placeholder="Monthly contribution"
+                  />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-success" onclick="saveDeposit()">
+                  ✓ Add Deposit
+                </button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title" id="dep-history-title"><span>📋 Deposit History</span></div>
+              <div id="dep-history"></div>
+            </div>
+          </div>
+
+          <!-- BILLS -->
+          <div class="page" id="page-bills">
+            <div
+              id="bills-readonly-notice"
+              class="readonly-notice"
+              style="display: none"
+            >
+              👁️ View only — you can see your own bills below. Only the Manager can add or delete bills.
+            </div>
+            <div class="card" id="bills-rent-card">
+              <div class="card-title"><span>🏠 Add Rent</span></div>
+              <div class="form-g g3">
+                <div>
+                  <label class="lbl">Member</label
+                  ><select id="bill-rent-mem"></select>
+                </div>
+                <div>
+                  <label class="lbl">Amount (Tk)</label
+                  ><input
+                    type="number"
+                    id="bill-rent-amt"
+                    placeholder="3000"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label class="lbl">Date</label
+                  ><input type="date" id="bill-rent-date" />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-success" onclick="saveBillRent()">
+                  ✓ Add Rent
+                </button>
+              </div>
+            </div>
+            <div class="card" id="bills-split-card">
+              <div class="card-title"><span>🧾 Add Bill (Split Equally)</span></div>
+              <div class="form-g g3">
+                <div>
+                  <label class="lbl">Bill Type</label
+                  ><select id="bill-split-type" onchange="onBillTypeChange()">
+                    <option value="water">💧 Water Bill</option>
+                    <option value="electricity">⚡ Electricity Bill</option>
+                    <option value="wifi">📶 WiFi Bill</option>
+                    <option value="maid">🧹 Maid Bill</option>
+                    <option value="other">📦 Others</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="lbl">Total Amount (Tk)</label
+                  ><input
+                    type="number"
+                    id="bill-split-amt"
+                    placeholder="1200"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label class="lbl">Date</label
+                  ><input type="date" id="bill-split-date" />
+                </div>
+              </div>
+              <div class="form-g" id="bill-split-other-wrap" style="display: none">
+                <div>
+                  <label class="lbl">Bill Name</label
+                  ><input
+                    type="text"
+                    id="bill-split-other-label"
+                    placeholder="e.g. Gas Bill, Internet Setup"
+                  />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-success" onclick="saveBillSplit()">
+                  ✓ Add &amp; Split Equally
+                </button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">
+                <span id="bills-history-title">📋 Bills History</span>
+              </div>
+              <div id="bills-history"></div>
+            </div>
+          </div>
+
+          <!-- DASHBOARD (replaces Summary) -->
+          <div class="page" id="page-dashboard">
+            <div class="dash-hero">
+              <div>
+                <div class="dash-hero-title">📈 Monthly Dashboard</div>
+                <div class="dash-hero-sub" id="dash-month-sub">Overview of meals, money &amp; balances</div>
+              </div>
+              <div style="text-align: right">
+                <div style="font-size: 11px; color: rgba(255,255,255,.65); text-transform: uppercase; letter-spacing: .5px">This Month</div>
+                <div style="font-size: 18px; font-weight: 800; color: var(--gold-soft)" id="dash-month-label2"></div>
+              </div>
+            </div>
+            <div class="stats-grid" id="sum-stats"></div>
+            <div class="card">
+              <div class="card-title"><span>🧾 Individual Summary</span></div>
+              <div id="sum-individual"></div>
+            </div>
+          </div>
+
+          <!-- MY PROFILE -->
+          <div class="page" id="page-profile">
+            <div class="profile-hero">
+              <div class="profile-avatar-wrap">
+                <div class="profile-avatar" id="profile-avatar-big">👤</div>
+                <label class="profile-avatar-edit" title="Change photo">
+                  📷
+                  <input type="file" accept="image/*" id="profile-photo-input" style="display: none" onchange="onProfilePhotoChange(event)" />
+                </label>
+              </div>
+              <div>
+                <div class="profile-hero-name" id="profile-hero-name">...</div>
+                <div class="profile-hero-meta" id="profile-hero-meta">Member</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title"><span>✏️ Edit Profile</span></div>
+              <div class="form-g g2">
+                <div>
+                  <label class="lbl">Name</label>
+                  <input type="text" id="profile-name" placeholder="Your name" />
+                </div>
+                <div>
+                  <label class="lbl">Phone</label>
+                  <input type="tel" id="profile-phone" placeholder="01XXXXXXXXX" maxlength="11" oninput="this.value = this.value.replace(/\D/g, '')" />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary" onclick="saveProfileInfo()">✓ Save Changes</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title"><span>🔒 Change Password</span></div>
+              <div class="form-g g2">
+                <div>
+                  <label class="lbl">New Password</label>
+                  <input type="password" id="profile-new-password" placeholder="Min 4 characters" />
+                </div>
+                <div>
+                  <label class="lbl">Confirm Password</label>
+                  <input type="password" id="profile-confirm-password" placeholder="Re-enter password" />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary" onclick="changeProfilePassword()">🔒 Update Password</button>
+              </div>
+            </div>
+
+            <div class="card" id="profile-invite-card" style="display: none">
+              <div class="card-title"><span>🎟️ Flat Invite Code</span></div>
+              <div style="font-size: 12px; color: var(--muted); margin-bottom: 12px">Share this code with people you want to join your flat. Only you (the Manager) can see this.</div>
+              <div class="invite-box">
+                <div class="invite-box-code" id="profile-invite-code">------</div>
+                <div class="btn-row" style="margin-top: 0">
+                  <button class="btn btn-gold btn-sm" onclick="copyInviteCode('profile-invite-code')">📋 Copy Code</button>
+                  <button class="btn btn-ghost btn-sm" onclick="regenerateInviteCode()">🔄 Regenerate</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title"><span>🔔 Push Notifications</span></div>
+              <div style="font-size: 12px; color: var(--muted); margin-bottom: 12px">Get alerts on this device even when the app is closed.</div>
+              <button class="btn btn-ghost" onclick="enablePushNotifications()">🔔 Enable Push Notifications</button>
+            </div>
+          </div>
+          <!-- MEMBERS -->
+          <div class="page" id="page-members">
+            <div
+              id="members-readonly-notice"
+              class="readonly-notice"
+              style="display: none"
+            >
+              👁️ View only access to Members list.
+            </div>
+            <div class="card" id="members-add-card">
+              <div class="card-title"><span>➕ Add Member</span></div>
+              <div class="form-g g3">
+                <div>
+                  <label class="lbl">Name</label
+                  ><input type="text" id="mem-name" placeholder="e.g. Rahim" />
+                </div>
+                <div>
+                  <label class="lbl">Phone</label
+                  ><input
+                    type="tel"
+                    id="mem-phone"
+                    placeholder="01XXXXXXXXX"
+                    maxlength="11"
+                    oninput="this.value = this.value.replace(/\D/g, '')"
+                  />
+                </div>
+                <div>
+                  <label class="lbl">Password (optional)</label
+                  ><input
+                    type="text"
+                    id="mem-password"
+                    placeholder="Leave blank to let them set it"
+                  />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary" onclick="addMember()">
+                  ✓ Add Member
+                </button>
+              </div>
+              <div
+                style="
+                  font-size: 11px;
+                  color: var(--muted);
+                  margin-top: 8px;
+                "
+              >
+                💡 If you leave the password blank, the member can set their
+                own password the first time they log in.
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span>👥 Members</span></div>
+              <div id="mem-list"></div>
+            </div>
+          </div>
+
+          <!-- INFO (house owner / maid contacts) -->
+          <div class="page" id="page-info">
+            <div
+              id="info-readonly-notice"
+              class="readonly-notice"
+              style="display: none"
+            >
+              👁️ View only. Manager can edit this information.
+            </div>
+            <div class="card" id="info-edit-card" style="display: none">
+              <div class="card-title"><span>✏️ Add Contact</span></div>
+              <div class="form-g g3">
+                <div>
+                  <label class="lbl">Designation</label
+                  ><input
+                    type="text"
+                    id="info-c-role"
+                    placeholder="e.g. House Owner, Maid, Caretaker"
+                  />
+                </div>
+                <div>
+                  <label class="lbl">Name</label
+                  ><input
+                    type="text"
+                    id="info-c-name"
+                    placeholder="e.g. Mr. Karim"
+                  />
+                </div>
+                <div>
+                  <label class="lbl">Number</label
+                  ><input
+                    type="tel"
+                    id="info-c-phone"
+                    placeholder="01XXXXXXXXX"
+                    maxlength="11"
+                    oninput="this.value = this.value.replace(/\D/g, '')"
+                  />
+                </div>
+              </div>
+              <div class="form-g">
+                <div>
+                  <label class="lbl">Additional Note (optional)</label
+                  ><input
+                    type="text"
+                    id="info-note"
+                    placeholder="e.g. Rent due date, etc."
+                  />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary" onclick="addInfoContact()">
+                  ✓ Add Contact
+                </button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span>📇 Important Contacts</span></div>
+              <div id="info-view"></div>
+            </div>
+          </div>
+
+          <!-- MEAL OFF REQUEST -->
+          <div class="page" id="page-mealoff">
+            <div class="card" id="mo-request-card">
+              <div class="card-title">
+                <span>🏖️ Send Meal Off Request</span>
+              </div>
+              <div class="form-g g2">
+                <div>
+                  <label class="lbl">Start Date</label
+                  ><input type="date" id="mo-start" />
+                </div>
+                <div>
+                  <label class="lbl">End Date</label
+                  ><input type="date" id="mo-end" />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary" onclick="sendMealOffRequest()">
+                  📨 Send Request
+                </button>
+              </div>
+            </div>
+            <div class="card" id="mo-payment-card" style="display: none">
+              <div class="card-title">
+                <span>💸 Send Payment Notification</span>
+              </div>
+              <div
+                style="
+                  font-size: 12px;
+                  color: var(--muted);
+                  margin-bottom: 10px;
+                "
+              >
+                Ask everyone or a specific member to pay for rent or other
+                expenses.
+              </div>
+              <div class="form-g g2">
+                <div>
+                  <label class="lbl">Send To</label
+                  ><select id="mo-pay-target">
+                    <option value="all">Everyone</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="lbl">Amount (Tk, optional)</label
+                  ><input
+                    type="number"
+                    id="mo-pay-amt"
+                    placeholder="e.g. 1500"
+                    min="0"
+                  />
+                </div>
+              </div>
+              <div class="form-g">
+                <div>
+                  <label class="lbl">Reason / Message</label
+                  ><input
+                    type="text"
+                    id="mo-pay-msg"
+                    placeholder="e.g. House rent is due"
+                  />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-success" onclick="sendPaymentNotice()">
+                  📨 Send Notification
+                </button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span>📋 All Requests</span></div>
+              <div id="mo-list"></div>
+            </div>
+          </div>
+
+          <!-- CHAT -->
+          <div class="page" id="page-chat">
+            <div
+              class="card"
+              style="
+                display: flex;
+                flex-direction: column;
+                flex: 1;
+                min-height: 0;
+                margin-bottom: 0;
+              "
+            >
+              <div class="card-title"><span>💬 Mess Group Chat</span></div>
+              <div class="chat-wrap">
+                <div class="chat-messages" id="chat-messages"></div>
+                <div class="chat-input-row">
+                  <input
+                    type="text"
+                    id="chat-input"
+                    placeholder="Type a message..."
+                    onkeydown="if(event.key==='Enter')sendChatMsg()"
+                  />
+                  <button class="chat-send-btn" onclick="sendChatMsg()">
+                    ➤
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- VOTE -->
+          <div class="page" id="page-vote">
+            <div
+              class="card"
+              style="border: 2px solid #fbbf24; background: #fffbeb"
+            >
+              <div class="card-title"><span>🗳️ Manager Election</span></div>
+              <div id="vote-status-area"></div>
+            </div>
+            <div class="card" id="vote-cast-card" style="display: none">
+              <div class="card-title"><span>🗳️ Cast Your Vote</span></div>
+              <div
+                style="
+                  font-size: 13px;
+                  color: var(--muted);
+                  margin-bottom: 14px;
+                "
+              >
+                Choose next month's Manager:
+              </div>
+              <div id="vote-options"></div>
+              <div class="btn-row" id="vote-btn-row"></div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span>📊 Current Results</span></div>
+              <div id="vote-results"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Panel -->
+    <div
+      class="notif-overlay"
+      id="notif-overlay"
+      onclick="closeNotifPanel()"
+    ></div>
+    <div class="notif-panel" id="notif-panel" style="display: none">
+      <div class="notif-panel-head">
+        <b>🔔 Notifications</b>
+        <button
+          class="btn btn-ghost btn-sm"
+          style="color: #fff; border-color: rgba(255, 255, 255, 0.4)"
+          onclick="closeNotifPanel()"
+        >
+          ✕
+        </button>
+      </div>
+      <div class="notif-list" id="notif-list"></div>
+    </div>
+
+    <!-- Modals -->
+    <div class="overlay" id="nm-overlay">
+      <div class="modal">
+        <h3>🔄 Start New Month?</h3>
+        <p>
+          This month's meal, bazaar, and deposit data will be cleared.
+          Members will remain. The vote winner will automatically become
+          Manager.
+        </p>
+        <div class="btn-row" style="justify-content: center">
+          <button class="btn btn-ghost" onclick="closeModal('nm-overlay')">
+            Cancel
+          </button>
+          <button class="btn btn-danger-o" onclick="doNewMonth()">
+            Yes, Start New Month
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="overlay" id="logout-overlay">
+      <div class="modal" style="text-align: center">
+        <div style="font-size: 36px; margin-bottom: 10px">👋</div>
+        <h3 id="logout-name" style="margin-bottom: 8px"></h3>
+        <p>Log out?</p>
+        <div class="btn-row" style="justify-content: center">
+          <button class="btn btn-ghost" onclick="closeModal('logout-overlay')">
+            No
+          </button>
+          <button class="btn btn-primary" onclick="confirmLogout()">
+            Log Out
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
+      import {
+        getAuth,
+        signInWithEmailAndPassword,
+        createUserWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+        updatePassword,
+      } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        setDoc,
+        onSnapshot,
+        collection,
+        getDocs,
+        deleteDoc,
+        updateDoc,
+        query,
+        orderBy,
+        limit,
+        where,
+        runTransaction,
+      } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
+      import {
+        getStorage,
+        ref as storageRef,
+        uploadString,
+        getDownloadURL,
+      } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-storage.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyCvg6Bo6rV3YJv06gtvE5TN7ZX3y9e224E",
+        authDomain: "mess-manager-284eb.firebaseapp.com",
+        projectId: "mess-manager-284eb",
+        storageBucket: "mess-manager-284eb.firebasestorage.app",
+        messagingSenderId: "997052323227",
+        appId: "1:997052323227:web:e8a41f25d0c8600a92bd3e",
+      };
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+      const storage = getStorage(app);
+
+      // Round to nearest integer, ties go away from zero (e.g. 120.5 -> 121, -120.5 -> -121)
+      function rAfZ(n, d = 0) {
+        const f = Math.pow(10, d);
+        const x = n * f;
+        const r = x >= 0 ? Math.ceil(x) : Math.floor(x);
+        return r / f;
+      }
+      window.rAfZ = rAfZ;
+
+      // ── MULTI-FLAT: phone numbers are mapped to a synthetic email for
+      // Firebase Auth, since Auth requires email/password (or phone+SMS,
+      // which needs a paid SMS provider). This keeps the phone+password
+      // UX identical to the original app while using real Firebase Auth
+      // under the hood.
+      function phoneToEmail(phone) {
+        return `bd${phone}@mess-manager.local`;
+      }
+      function genInviteCode() {
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no O/0/I/1 confusion
+        let s = "";
+        for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+        return s;
+      }
+      function genId(prefix) {
+        return prefix + Date.now() + Math.random().toString(36).slice(2, 7);
+      }
+
+      // ── FLAT-SCOPED FIRESTORE REFS ─────────────────────────────────
+      // Every collection/doc the app touches lives under flats/{flatId}/...
+      // so that one flat's data is fully isolated from another's.
+      let FLAT_ID = null;
+      let flatRef = null; // flats/{flatId} -- doubles as the META doc
+      let mealsRef = null; // flats/{flatId}/state/meals
+      let infoRef = null; // flats/{flatId}/state/info
+      let membersCol = null;
+      let bazaarCol = null;
+      let depositsCol = null;
+      let billsCol = null;
+      let mealoffCol = null;
+      let notifCol = null;
+      let chatCol = null;
+      let chatQuery = null;
+      const inviteCodesCol = collection(db, "inviteCodes"); // top-level, global lookup
+      const usersCol = collection(db, "users"); // top-level: uid -> {flatId, role}
+
+      function bindFlatRefs(flatId) {
+        FLAT_ID = flatId;
+        flatRef = doc(db, "flats", flatId);
+        mealsRef = doc(db, "flats", flatId, "state", "meals");
+        infoRef = doc(db, "flats", flatId, "state", "info");
+        membersCol = collection(db, "flats", flatId, "members");
+        bazaarCol = collection(db, "flats", flatId, "bazaar");
+        depositsCol = collection(db, "flats", flatId, "deposits");
+        billsCol = collection(db, "flats", flatId, "bills");
+        mealoffCol = collection(db, "flats", flatId, "mealoffRequests");
+        notifCol = collection(db, "flats", flatId, "notifications");
+        chatCol = collection(db, "flats", flatId, "chatMessages");
+        chatQuery = query(chatCol, orderBy("createdAt", "asc"), limit(200));
+      }
+
+      let META = {
+        managerId: null,
+        monthKey: mkKey(),
+        voteOpen: false,
+        votes: {},
+        flatName: "",
+        inviteCode: "",
+      };
+      let MEMBERS = [],
+        MEALS = {},
+        BAZAAR = [],
+        DEPOSITS = [],
+        SUMMARY_DEPOSITS = [], // unfiltered deposits for ALL users, used only by the shared Dashboard page
+        BILLS = [],
+        INFO = {},
+        MEALOFF = [],
+        NOTIFS = [],
+        CHAT = [];
+      let currentUser = null,
+        unsubs = [],
+        currentTab = "sheet",
+        dueCheckInterval = null;
+
+      function mkKey() {
+        const n = new Date();
+        return (
+          n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0")
+        );
+      }
+      function mkLabel(k) {
+        if (!k) return "";
+        const [y, m] = k.split("-");
+        return new Date(y, m - 1, 1).toLocaleString("default", {
+          month: "long",
+          year: "numeric",
+        });
+      }
+      function daysInMonth(k) {
+        if (!k) return 30;
+        const [y, m] = k.split("-");
+        return new Date(y, m, 0).getDate();
+      }
+      function todayStr() {
+        return new Date().toISOString().split("T")[0];
+      }
+      function fmtDate(d) {
+        if (!d) return "";
+        return new Date(d + "T00:00:00").toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+        });
+      }
+      function isManager() {
+        return (
+          currentUser && META.managerId && currentUser.id === META.managerId
+        );
+      }
+      function showLoading(t) {
+        const el = document.getElementById("loading-overlay");
+        el.querySelector("div+div").textContent = t || "Loading...";
+        el.classList.remove("hidden");
+      }
+      function hideLoading() {
+        document.getElementById("loading-overlay").classList.add("hidden");
+      }
+      function toast(msg, dur = 2800) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.style.display = "flex";
+        clearTimeout(t._t);
+        t._t = setTimeout(() => (t.style.display = "none"), dur);
+      }
+      window.closeModal = (id) =>
+        (document.getElementById(id).style.display = "none");
+
+      // ── SIDEBAR (mobile drawer) ───────────────────────────────────
+      window.openSidebar = function () {
+        document.getElementById("sidebar").classList.add("open");
+        document.getElementById("sidebar-overlay").classList.add("show");
+      };
+      window.closeSidebar = function () {
+        document.getElementById("sidebar").classList.remove("open");
+        document.getElementById("sidebar-overlay").classList.remove("show");
+      };
+
+      // ── AUTH TABS (Login / Create Flat / Join Flat) ───────────────
+      window.switchAuthTab = function (tab) {
+        ["login", "create", "join"].forEach((t) => {
+          document.getElementById("auth-tab-" + t).classList.toggle("active", t === tab);
+          document.getElementById("auth-panel-" + t).classList.toggle("active", t === tab);
+        });
+      };
+
+      window.togglePwd = function (inputId, btn) {
+        const inp = document.getElementById(inputId);
+        const showing = inp.type === "text";
+        inp.type = showing ? "password" : "text";
+        btn.classList.toggle("is-visible", !showing);
+      };
+
+      window.copyInviteCode = function (elId) {
+        const code = document.getElementById(elId).textContent.trim();
+        if (!code || code === "------") return;
+        navigator.clipboard
+          ?.writeText(code)
+          .then(() => toast("✓ Invite code copied!"))
+          .catch(() => toast("⚠️ Could not copy. Code: " + code));
+      };
+
+      async function init() {
+        showLoading("Connecting...");
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            try {
+              const userSnap = await getDoc(doc(db, "users", user.uid));
+              if (userSnap.exists() && userSnap.data().flatId) {
+                await loginAs(user.uid, userSnap.data().flatId);
+                return;
+              }
+            } catch (_e) {
+              // fall through to auth screen
+            }
+            hideLoading();
+            showAuthScreen();
+          } else {
+            hideLoading();
+            showAuthScreen();
+          }
+        });
+      }
+      function showAuthScreen() {
+        document.getElementById("auth-screen").classList.remove("hidden");
+      }
+      init();
+
+      // ── ENTER KEY SUBMIT (delegated, works for Bangla/English typing) ──
+      const ENTER_SUBMIT_MAP = [
+        { selector: "#baz-items input", action: () => window.saveBazaar() },
+        { selector: "#baz-date", action: () => window.saveBazaar() },
+        { selector: "#dep-amt", action: () => window.saveDeposit() },
+        { selector: "#dep-note", action: () => window.saveDeposit() },
+        { selector: "#bill-rent-amt", action: () => window.saveBillRent() },
+        { selector: "#bill-split-amt", action: () => window.saveBillSplit() },
+        { selector: "#bill-split-other-label", action: () => window.saveBillSplit() },
+        { selector: "#mem-name", action: () => window.addMember() },
+        { selector: "#mem-phone", action: () => window.addMember() },
+        { selector: "#mem-password", action: () => window.addMember() },
+        { selector: "#info-c-role", action: () => window.addInfoContact() },
+        { selector: "#info-c-name", action: () => window.addInfoContact() },
+        { selector: "#info-c-phone", action: () => window.addInfoContact() },
+        { selector: "#info-note", action: () => window.addInfoContact() },
+        { selector: "#mo-start", action: () => window.sendMealOffRequest() },
+        { selector: "#mo-end", action: () => window.sendMealOffRequest() },
+        { selector: "#mo-pay-amt", action: () => window.sendPaymentNotice() },
+        { selector: "#mo-pay-msg", action: () => window.sendPaymentNotice() },
+      ];
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter") return;
+        if (e.isComposing) return;
+        const target = e.target;
+        if (!target || target.tagName === "SELECT") return;
+        for (const rule of ENTER_SUBMIT_MAP) {
+          if (target.matches && target.matches(rule.selector)) {
+            e.preventDefault();
+            rule.action();
+            return;
+          }
+        }
+      });
+
+      // ── CREATE FLAT ─────────────────────────────────────────────
+      window.doCreateFlat = async function () {
+        const flatName = document.getElementById("create-flatname").value.trim();
+        const mgrName = document.getElementById("create-mgrname").value.trim();
+        const phone = document.getElementById("create-phone").value.trim();
+        const password = document.getElementById("create-password").value;
+        const errEl = document.getElementById("create-err");
+        errEl.textContent = "";
+        if (!flatName) { errEl.textContent = "Enter a flat name"; return; }
+        if (!mgrName) { errEl.textContent = "Enter your name"; return; }
+        if (phone.length < 11) { errEl.textContent = "Enter a valid 11-digit number"; return; }
+        if (password.length < 4) { errEl.textContent = "Password must be at least 4 characters"; return; }
+        const btn = document.getElementById("create-btn");
+        btn.disabled = true;
+        btn.textContent = "Creating...";
+        try {
+          const cred = await createUserWithEmailAndPassword(auth, phoneToEmail(phone), password);
+          const uid = cred.user.uid;
+          const flatId = "F" + Date.now();
+          let inviteCode = genInviteCode();
+          // Ensure invite code uniqueness (extremely unlikely to collide, but check once)
+          const existing = await getDoc(doc(db, "inviteCodes", inviteCode));
+          if (existing.exists()) inviteCode = genInviteCode() + Math.floor(Math.random() * 9);
+          await setDoc(doc(db, "flats", flatId), {
+            flatId,
+            flatName,
+            managerId: uid,
+            monthKey: mkKey(),
+            voteOpen: false,
+            votes: {},
+            inviteCode,
+            createdAt: Date.now(),
+          });
+          await setDoc(doc(db, "flats", flatId, "members", uid), {
+            id: uid,
+            name: mgrName,
+            phone,
+          });
+          await setDoc(doc(db, "flats", flatId, "state", "meals"), {});
+          await setDoc(doc(db, "inviteCodes", inviteCode), { flatId });
+          await setDoc(doc(db, "users", uid), { flatId, role: "manager" });
+          document.getElementById("create-invite-code").textContent = inviteCode;
+          document.getElementById("create-invite-display").classList.remove("hidden");
+          toast("✓ Flat created! You are the Manager.");
+          setTimeout(() => loginAs(uid, flatId), 1400);
+        } catch (e) {
+          errEl.textContent = "❌ " + (e.code === "auth/email-already-in-use" ? "This phone number is already registered." : e.message);
+          btn.disabled = false;
+          btn.textContent = "Create Flat & Become Manager →";
+        }
+      };
+
+      // ── JOIN FLAT ───────────────────────────────────────────────
+      window.doJoinFlat = async function () {
+        const code = document.getElementById("join-code").value.trim().toUpperCase();
+        const name = document.getElementById("join-name").value.trim();
+        const phone = document.getElementById("join-phone").value.trim();
+        const password = document.getElementById("join-password").value;
+        const errEl = document.getElementById("join-err");
+        errEl.textContent = "";
+        if (!code) { errEl.textContent = "Enter the invite code"; return; }
+        if (!name) { errEl.textContent = "Enter your name"; return; }
+        if (phone.length < 11) { errEl.textContent = "Enter a valid 11-digit number"; return; }
+        if (password.length < 4) { errEl.textContent = "Password must be at least 4 characters"; return; }
+        const btn = document.getElementById("join-btn");
+        btn.disabled = true;
+        btn.textContent = "Joining...";
+        try {
+          const codeSnap = await getDoc(doc(db, "inviteCodes", code));
+          if (!codeSnap.exists()) {
+            errEl.textContent = "❌ Invalid invite code";
+            btn.disabled = false;
+            btn.textContent = "Join Flat →";
+            return;
+          }
+          const flatId = codeSnap.data().flatId;
+          const cred = await createUserWithEmailAndPassword(auth, phoneToEmail(phone), password);
+          const uid = cred.user.uid;
+          await setDoc(doc(db, "flats", flatId, "members", uid), {
+            id: uid,
+            name,
+            phone,
+          });
+          await setDoc(doc(db, "users", uid), { flatId, role: "member" });
+          toast("✓ Joined the flat!");
+          await loginAs(uid, flatId);
+        } catch (e) {
+          errEl.textContent = "❌ " + (e.code === "auth/email-already-in-use" ? "This phone number is already registered." : e.message);
+          btn.disabled = false;
+          btn.textContent = "Join Flat →";
+        }
+      };
+
+      // ── LOGIN ───────────────────────────────────────────────────
+      window.doLogin = async function () {
+        const phone = document.getElementById("login-phone").value.trim();
+        const password = document.getElementById("login-password").value;
+        document.getElementById("login-err").textContent = "";
+        if (phone.length < 11) {
+          document.getElementById("login-err").textContent = "Enter a valid 11-digit number";
+          return;
+        }
+        if (!password) {
+          document.getElementById("login-err").textContent = "Enter your password";
+          return;
+        }
+        const btn = document.getElementById("login-btn");
+        btn.disabled = true;
+        btn.textContent = "Checking...";
+        try {
+          const cred = await signInWithEmailAndPassword(auth, phoneToEmail(phone), password);
+          const uid = cred.user.uid;
+          const userSnap = await getDoc(doc(db, "users", uid));
+          if (!userSnap.exists() || !userSnap.data().flatId) {
+            document.getElementById("login-err").textContent = "❌ No flat found for this account.";
+            btn.disabled = false;
+            btn.textContent = "Log In →";
+            return;
+          }
+          await loginAs(uid, userSnap.data().flatId);
+        } catch (e) {
+          document.getElementById("login-err").textContent =
+            e.code === "auth/invalid-credential" || e.code === "auth/wrong-password" || e.code === "auth/user-not-found"
+              ? "❌ No member found with this number/password."
+              : "❌ " + e.message;
+          btn.disabled = false;
+          btn.textContent = "Log In →";
+        }
+      };
+
+      async function loginAs(uid, flatId) {
+        showLoading("Logging in...");
+        bindFlatRefs(flatId);
+        const [mSnap, memSnap, mlSnap, bSnap, dSnap, iSnap, moSnap, nSnap, blSnap] =
+          await Promise.all([
+            getDoc(flatRef),
+            getDocs(membersCol),
+            getDoc(mealsRef),
+            getDocs(bazaarCol),
+            getDocs(depositsCol),
+            getDoc(infoRef),
+            getDocs(mealoffCol),
+            getDocs(notifCol),
+            getDocs(billsCol),
+          ]);
+        META = mSnap.data() || {
+          managerId: uid,
+          monthKey: mkKey(),
+          voteOpen: false,
+          votes: {},
+          flatName: "",
+          inviteCode: "",
+        };
+        MEMBERS = [];
+        memSnap.forEach((d) => MEMBERS.push(d.data()));
+        MEALS = mlSnap.exists() ? mlSnap.data() : {};
+        BAZAAR = [];
+        bSnap.forEach((d) => BAZAAR.push(d.data()));
+        DEPOSITS = [];
+        dSnap.forEach((d) => DEPOSITS.push(d.data()));
+        // Dashboard is shared: every user keeps the full, unfiltered list here
+        SUMMARY_DEPOSITS = DEPOSITS.slice();
+        // Security: Deposit module only holds the member's own deposit data in memory
+        if (uid !== (mSnap.data()?.managerId)) {
+          DEPOSITS = DEPOSITS.filter((d) => d.mid === uid);
+        }
+        BILLS = [];
+        blSnap.forEach((d) => BILLS.push(d.data()));
+        INFO = iSnap.exists() ? iSnap.data() : {};
+        MEALOFF = [];
+        moSnap.forEach((d) => MEALOFF.push(d.data()));
+        NOTIFS = [];
+        nSnap.forEach((d) => NOTIFS.push(d.data()));
+        const member = MEMBERS.find((m) => m.id === uid);
+        if (!member) {
+          hideLoading();
+          document.getElementById("login-err").textContent = "❌ Member not found";
+          return;
+        }
+        currentUser = { id: member.id, name: member.name, phone: member.phone, photo: member.photo || null };
+        unsubs.forEach((u) => u());
+        unsubs = [];
+        unsubs.push(
+          onSnapshot(flatRef, (s) => {
+            if (s.exists()) {
+              META = s.data();
+              applyRoleUI();
+              refresh();
+            }
+          }),
+        );
+        unsubs.push(
+          onSnapshot(membersCol, (s) => {
+            MEMBERS = [];
+            s.forEach((d) => MEMBERS.push(d.data()));
+            const me = MEMBERS.find((m) => m.id === currentUser?.id);
+            if (me) currentUser.photo = me.photo || null;
+            applySidebarUser();
+            refresh();
+          }),
+        );
+        unsubs.push(
+          onSnapshot(mealsRef, (s) => {
+            MEALS = s.exists() ? s.data() : {};
+            if (currentTab === "sheet") renderSheet();
+          }),
+        );
+        unsubs.push(
+          onSnapshot(bazaarCol, (s) => {
+            BAZAAR = [];
+            s.forEach((d) => BAZAAR.push(d.data()));
+            if (currentTab === "bazaar") renderBazHistory();
+            if (currentTab === "dashboard") renderDashboard();
+            checkDueDeposits();
+          }),
+        );
+        unsubs.push(
+          onSnapshot(depositsCol, (s) => {
+            const allDeposits = [];
+            s.forEach((d) => allDeposits.push(d.data()));
+            SUMMARY_DEPOSITS = allDeposits;
+            if (isManager()) {
+              DEPOSITS = allDeposits;
+            } else {
+              DEPOSITS = allDeposits.filter((d) => d.mid === uid);
+            }
+            if (currentTab === "deposit") renderDepHistory();
+            if (currentTab === "dashboard") renderDashboard();
+            checkDueDeposits();
+          }),
+        );
+        unsubs.push(
+          onSnapshot(billsCol, (s) => {
+            BILLS = [];
+            s.forEach((d) => BILLS.push(d.data()));
+            if (currentTab === "bills") renderBillsPage();
+          }),
+        );
+        unsubs.push(
+          onSnapshot(infoRef, (s) => {
+            INFO = s.exists() ? s.data() : {};
+            if (currentTab === "info") renderInfo();
+          }),
+        );
+        unsubs.push(
+          onSnapshot(mealoffCol, (s) => {
+            MEALOFF = [];
+            s.forEach((d) => MEALOFF.push(d.data()));
+            if (currentTab === "mealoff") renderMealOff();
+          }),
+        );
+        unsubs.push(
+          onSnapshot(notifCol, (s) => {
+            NOTIFS = [];
+            s.forEach((d) => NOTIFS.push(d.data()));
+            updateBell();
+            if (document.getElementById("notif-panel").style.display !== "none")
+              renderNotifPanel();
+          }),
+        );
+        unsubs.push(
+          onSnapshot(chatQuery, (s) => {
+            CHAT = [];
+            s.forEach((d) => CHAT.push(d.data()));
+            if (currentTab === "chat") renderChat();
+          }),
+        );
+        hideLoading();
+        document.getElementById("auth-screen").classList.add("hidden");
+        document.getElementById("app").style.display = "flex";
+        document.getElementById("sidebar-flat-name").textContent = META.flatName || "My Flat";
+        applyRoleUI();
+        applySidebarUser();
+        updateMonthLabel();
+        gotoTab("sheet");
+        toast(`✓ Welcome, ${member.name}! ${member.id === META.managerId ? "👑 Manager" : "👤 Member"}`);
+        checkDueDeposits();
+        if (dueCheckInterval) clearInterval(dueCheckInterval);
+        dueCheckInterval = setInterval(checkDueDeposits, 60 * 60 * 1000);
+      }
+
+      window.doLogout = function () {
+        document.getElementById("logout-name").textContent = currentUser?.name || "";
+        document.getElementById("logout-overlay").style.display = "flex";
+      };
+      window.confirmLogout = async function () {
+        unsubs.forEach((u) => u());
+        unsubs = [];
+        if (dueCheckInterval) {
+          clearInterval(dueCheckInterval);
+          dueCheckInterval = null;
+        }
+        currentUser = null;
+        FLAT_ID = null;
+        closeModal("logout-overlay");
+        closeSidebar();
+        try {
+          await signOut(auth);
+        } catch (_e) {}
+        document.getElementById("auth-screen").classList.remove("hidden");
+        document.getElementById("app").style.display = "none";
+        document.getElementById("login-phone").value = "";
+        document.getElementById("login-password").value = "";
+        document.getElementById("login-err").textContent = "";
+        document.getElementById("login-btn").disabled = false;
+        document.getElementById("login-btn").textContent = "Log In →";
+        switchAuthTab("login");
+      };
+
+      function applySidebarUser() {
+        const mgr = isManager();
+        document.getElementById("sidebar-user-name").textContent = currentUser?.name || "...";
+        document.getElementById("sidebar-user-role").textContent = mgr ? "👑 Manager" : "👤 Member";
+        const av = document.getElementById("sidebar-avatar");
+        if (currentUser?.photo) {
+          av.innerHTML = `<img src="${currentUser.photo}" alt="" />`;
+        } else {
+          av.textContent = (currentUser?.name || "?").charAt(0).toUpperCase();
+        }
+      }
+
+      function applyRoleUI() {
+        const mgr = isManager();
+        ["sheet", "bazaar", "deposit", "members"].forEach((t) => {
+          const n = document.getElementById(t + "-readonly-notice");
+          if (n) n.style.display = mgr ? "none" : "flex";
+        });
+        ["bazaar-add-card", "members-add-card"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = mgr ? "block" : "none";
+        });
+        const depAddCard = document.getElementById("deposit-add-card");
+        if (depAddCard) depAddCard.style.display = mgr ? "block" : "none";
+        if (mgr) {
+          const ds = document.getElementById("dep-mem");
+          if (ds)
+            ds.innerHTML = MEMBERS.map((m) => `<option value="${m.id}">${m.name}</option>`).join("");
+        }
+        const billsNotice = document.getElementById("bills-readonly-notice");
+        if (billsNotice) billsNotice.style.display = mgr ? "none" : "flex";
+        ["bills-rent-card", "bills-split-card"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = mgr ? "block" : "none";
+        });
+        const infoNotice = document.getElementById("info-readonly-notice");
+        if (infoNotice) infoNotice.style.display = mgr ? "none" : "flex";
+        const infoEdit = document.getElementById("info-edit-card");
+        if (infoEdit) infoEdit.style.display = mgr ? "block" : "none";
+        const moPayCard = document.getElementById("mo-payment-card");
+        if (moPayCard) moPayCard.style.display = mgr ? "block" : "none";
+        const moTarget = document.getElementById("mo-pay-target");
+        if (moTarget) {
+          moTarget.innerHTML =
+            '<option value="all">Everyone</option>' +
+            MEMBERS.map((m) => `<option value="${m.id}">${m.name}</option>`).join("");
+        }
+        const inviteCard = document.getElementById("profile-invite-card");
+        if (inviteCard) inviteCard.style.display = mgr ? "block" : "none";
+        if (mgr) {
+          const codeEl = document.getElementById("profile-invite-code");
+          if (codeEl) codeEl.textContent = META.inviteCode || "------";
+        }
+      }
+
+      const TAB_META = {
+        sheet: { icon: "🍽", title: "Meal Records" },
+        bazaar: { icon: "🛒", title: "Bazaar" },
+        deposit: { icon: "💰", title: "Deposits" },
+        bills: { icon: "🧾", title: "Bills" },
+        dashboard: { icon: "📈", title: "Dashboard" },
+        members: { icon: "👥", title: "Members" },
+        profile: { icon: "👤", title: "My Profile" },
+        info: { icon: "📇", title: "Information" },
+        mealoff: { icon: "📢", title: "Announcement" },
+        chat: { icon: "💬", title: "Chat" },
+        vote: { icon: "🗳", title: "Vote" },
+      };
+
+      window.gotoTab = function (name) {
+        currentTab = name;
+        document.querySelectorAll(".snav-item").forEach((t) => {
+          t.classList.toggle("active", t.dataset.tab === name);
+        });
+        document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
+        const pageEl = document.getElementById("page-" + name);
+        if (pageEl) pageEl.classList.add("active");
+        const meta = TAB_META[name] || { icon: "📄", title: name };
+        document.getElementById("page-title-icon").textContent = meta.icon;
+        document.getElementById("page-title-text").textContent = meta.title;
+        const mainCol = document.querySelector(".main-col");
+        if (mainCol) mainCol.style.overflowY = name === "chat" ? "hidden" : "auto";
+        closeSidebar();
+        refresh();
+      };
+      function refresh() {
+        if (currentTab === "sheet") renderSheet();
+        else if (currentTab === "bazaar") renderBazPage();
+        else if (currentTab === "deposit") renderDepPage();
+        else if (currentTab === "bills") renderBillsPage();
+        else if (currentTab === "dashboard") renderDashboard();
+        else if (currentTab === "members") renderMembers();
+        else if (currentTab === "profile") renderProfile();
+        else if (currentTab === "vote") renderVotePage();
+        else if (currentTab === "info") renderInfo();
+        else if (currentTab === "mealoff") renderMealOff();
+        else if (currentTab === "chat") renderChat();
+      }
+      function updateMonthLabel() {
+        document.getElementById("month-label").textContent = mkLabel(META.monthKey) || "";
+      }
+
+      // ── MEMBERS ──────────────────────────────────────────────────
+      window.addMember = async function () {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        const name = document.getElementById("mem-name").value.trim();
+        const phone = document.getElementById("mem-phone").value.trim();
+        const password = document.getElementById("mem-password").value.trim();
+        if (!name) {
+          toast("⚠️ Enter a name");
+          return;
+        }
+        if (phone.length < 11) {
+          toast("⚠️ Enter a valid 11-digit number");
+          return;
+        }
+        if (password && password.length < 4) {
+          toast("⚠️ Password must be at least 4 characters");
+          return;
+        }
+        if (MEMBERS.find((m) => m.name.toLowerCase() === name.toLowerCase())) {
+          toast("⚠️ A member with this name already exists");
+          return;
+        }
+        if (MEMBERS.find((m) => m.phone === phone)) {
+          toast("⚠️ A member with this number already exists");
+          return;
+        }
+        toast(
+          "ℹ️ Ask them to use 'Join Flat' with your invite code — this creates their login automatically.",
+          5000,
+        );
+      };
+      window.delMember = async function (id) {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        if (id === META.managerId) {
+          toast("⚠️ Cannot remove the Manager");
+          return;
+        }
+        await deleteDoc(doc(db, "flats", FLAT_ID, "members", id));
+        toast("Member removed");
+      };
+      function renderMembers() {
+        const el = document.getElementById("mem-list");
+        if (!MEMBERS.length) {
+          el.innerHTML = '<div class="empty">No members yet.</div>';
+          return;
+        }
+        const mgr = isManager();
+        let h =
+          '<table class="simple"><thead><tr><th>Name</th><th>Phone</th><th>Role</th>' +
+          (mgr ? "<th>Total Deposit</th>" : "") +
+          (mgr ? "<th></th>" : "") +
+          "</tr></thead><tbody>";
+        MEMBERS.forEach((m) => {
+          const isMgr = m.id === META.managerId;
+          const depCell = mgr
+            ? (() => {
+                const dep = DEPOSITS.filter((d) => d.mid === m.id).reduce((a, d) => a + d.amt, 0);
+                return `<td><span class="badge bb">৳${dep}</span></td>`;
+              })()
+            : "";
+          h += `<tr><td><b>${m.name}</b>${m.id === currentUser?.id ? ' <span style="font-size:10px;color:var(--muted)">(You)</span>' : ""}</td><td style="color:var(--muted)">${m.phone}</td><td><span class="badge ${isMgr ? "badge-manager" : "badge-member"}">${isMgr ? "👑 Manager" : "👤 Member"}</span></td>${depCell}${mgr ? `<td>${!isMgr ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger);border:none" onclick="delMember('${m.id}')">✕</button>` : "—"}</td>` : ""}</tr>`;
+        });
+        h += "</tbody></table>";
+        el.innerHTML = h;
+        if (mgr) {
+          const ds = document.getElementById("dep-mem");
+          if (ds) ds.innerHTML = MEMBERS.map((m) => `<option value="${m.id}">${m.name}</option>`).join("");
+        }
+      }
+
+      // ── INFO (dynamic contacts: owner, maid, caretaker, etc.) ──────
+      window.addInfoContact = async function () {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        const role = document.getElementById("info-c-role").value.trim();
+        const name = document.getElementById("info-c-name").value.trim();
+        const phone = document.getElementById("info-c-phone").value.trim();
+        if (!role) {
+          toast("⚠️ Enter a designation");
+          return;
+        }
+        if (!name && !phone) {
+          toast("⚠️ Enter a name or number");
+          return;
+        }
+        const note = document.getElementById("info-note").value.trim();
+        const contacts = Array.isArray(INFO.contacts) ? [...INFO.contacts] : [];
+        contacts.push({ id: "CT" + Date.now(), role, name, phone });
+        await setDoc(infoRef, { contacts, note }, { merge: true });
+        document.getElementById("info-c-role").value = "";
+        document.getElementById("info-c-name").value = "";
+        document.getElementById("info-c-phone").value = "";
+        toast("✓ Contact added");
+      };
+      window.delInfoContact = async function (id) {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        const contacts = (INFO.contacts || []).filter((c) => c.id !== id);
+        await setDoc(infoRef, { contacts }, { merge: true });
+        toast("Contact removed");
+      };
+      function renderInfo() {
+        if (isManager()) {
+          document.getElementById("info-note").value = INFO.note || "";
+        }
+        const el = document.getElementById("info-view");
+        const contacts = Array.isArray(INFO.contacts) ? INFO.contacts : [];
+        if (!contacts.length && !INFO.note) {
+          el.innerHTML = '<div class="empty">No information added yet.</div>';
+          return;
+        }
+        const mgr = isManager();
+        let h = "";
+        contacts.forEach((c) => {
+          h += `<div class="contact-card" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div><div class="c-label">${escapeHtml(c.role)}</div><div class="c-name">${escapeHtml(c.name) || "—"}</div>${c.phone ? `<a class="c-phone" href="tel:${c.phone}">📞 ${c.phone}</a>` : ""}</div>${mgr ? `<button class="btn btn-danger-o btn-sm" onclick="delInfoContact('${c.id}')">✕</button>` : ""}</div>`;
+        });
+        if (INFO.note) {
+          h += `<div class="contact-card"><div class="c-label">📝 Note</div><div style="font-size:13px">${escapeHtml(INFO.note)}</div></div>`;
+        }
+        el.innerHTML = h;
+      }
+
+      // ── MEAL OFF REQUEST ─────────────────────────────────────────
+      window.sendMealOffRequest = async function () {
+        const start = document.getElementById("mo-start").value;
+        const end = document.getElementById("mo-end").value;
+        if (!start || !end) {
+          toast("⚠️ Select a date");
+          return;
+        }
+        if (end < start) {
+          toast("⚠️ End date cannot be before start date");
+          return;
+        }
+        const id = "MO" + Date.now();
+        await setDoc(doc(db, "flats", FLAT_ID, "mealoffRequests", id), {
+          id,
+          mid: currentUser.id,
+          mname: currentUser.name,
+          start,
+          end,
+          status: "pending",
+          createdAt: Date.now(),
+        });
+        await pushNotif("manager", `📨 ${currentUser.name} sent a meal off request (${fmtDate(start)} - ${fmtDate(end)})`);
+        document.getElementById("mo-start").value = "";
+        document.getElementById("mo-end").value = "";
+        toast("✓ Request sent");
+      };
+      window.decideMealOff = async function (id, status) {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        const req = MEALOFF.find((r) => r.id === id);
+        if (!req) return;
+        await updateDoc(doc(db, "flats", FLAT_ID, "mealoffRequests", id), { status });
+        await pushNotif(
+          req.mid,
+          `${status === "approved" ? "✅" : "❌"} Your meal off request (${fmtDate(req.start)} - ${fmtDate(req.end)}) was ${status === "approved" ? "approved" : "rejected"}`,
+        );
+        toast(status === "approved" ? "✓ Approved" : "Rejected");
+      };
+      function renderMealOff() {
+        const mgr = isManager();
+        const el = document.getElementById("mo-list");
+        const rows = (mgr ? MEALOFF : MEALOFF.filter((r) => r.mid === currentUser.id))
+          .slice()
+          .sort((a, b) => b.createdAt - a.createdAt);
+        if (!rows.length) {
+          el.innerHTML = '<div class="empty">No requests yet.</div>';
+          return;
+        }
+        let h = "";
+        rows.forEach((r) => {
+          h += `<div class="req-card"><div class="req-top"><b>${r.mname}</b><span class="req-status ${r.status}">${r.status === "pending" ? "⏳ Pending" : r.status === "approved" ? "✅ Approved" : "❌ Rejected"}</span></div><div style="font-size:13px;color:var(--muted)">📅 ${fmtDate(r.start)} - ${fmtDate(r.end)}</div>${mgr && r.status === "pending" ? `<div class="btn-row" style="margin-top:8px"><button class="btn btn-success btn-sm" onclick="decideMealOff('${r.id}','approved')">✓ Approve</button><button class="btn btn-danger-o btn-sm" onclick="decideMealOff('${r.id}','rejected')">✕ Reject</button></div>` : ""}</div>`;
+        });
+        el.innerHTML = h;
+      }
+
+      // ── PAYMENT NOTICE (Manager → Members) ───────────────────────
+      window.sendPaymentNotice = async function () {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        const target = document.getElementById("mo-pay-target").value;
+        const amt = document.getElementById("mo-pay-amt").value.trim();
+        const msg = document.getElementById("mo-pay-msg").value.trim();
+        if (!msg) {
+          toast("⚠️ Write a message");
+          return;
+        }
+        const amtTxt = amt ? ` (৳${amt})` : "";
+        const text = `💸 Please pay${amtTxt}: ${msg}`;
+        if (target === "all") {
+          await Promise.all(MEMBERS.filter((m) => m.id !== currentUser.id).map((m) => pushNotif(m.id, text)));
+        } else {
+          await pushNotif(target, text);
+        }
+        document.getElementById("mo-pay-amt").value = "";
+        document.getElementById("mo-pay-msg").value = "";
+        toast("✓ Notification sent");
+      };
+
+      // ── NOTIFICATIONS ─────────────────────────────────────────────
+      async function pushNotif(toId, text) {
+        const realTo = toId === "manager" ? META.managerId : toId;
+        if (!realTo) return;
+        const id = "N" + Date.now() + Math.random().toString(36).slice(2, 7);
+        await setDoc(doc(db, "flats", FLAT_ID, "notifications", id), {
+          id,
+          to: realTo,
+          text,
+          read: false,
+          createdAt: Date.now(),
+        });
+        // Foundation for Web Push: also fan out a push to subscribed devices.
+        try { sendWebPushIfSubscribed(realTo, text); } catch (_e) {}
+      }
+
+      // ── DUE DEPOSIT REMINDERS (every 3 days, when deposit < expense) ──
+      const DUE_REMINDER_GAP_MS = 3 * 24 * 60 * 60 * 1000;
+      let dueCheckRunning = false;
+      async function checkDueDeposits() {
+        if (!isManager() || dueCheckRunning) return;
+        if (!META.monthKey || !MEMBERS.length) return;
+        dueCheckRunning = true;
+        try {
+          const mk = META.monthKey;
+          const days = daysInMonth(mk);
+          const md = {};
+          MEMBERS.forEach((m) => {
+            md[m.id] = {
+              meals: 0,
+              dep: DEPOSITS.filter((d) => d.mid === m.id).reduce((a, d) => a + d.amt, 0),
+            };
+          });
+          for (let d = 1; d <= days; d++) {
+            MEMBERS.forEach((m) => {
+              md[m.id].meals += getMeal(m.id, mk, d);
+            });
+          }
+          const tMarket = BAZAAR.filter((b) => b.date.startsWith(mk)).reduce((a, b) => a + b.total, 0);
+          const tMeals = MEMBERS.reduce((a, m) => a + md[m.id].meals, 0);
+          const mealRate = tMeals > 0 ? tMarket / tMeals : 0;
+          const now = Date.now();
+          for (const m of MEMBERS) {
+            const exp = md[m.id].meals * mealRate;
+            const bal = md[m.id].dep - exp;
+            if (bal >= -1) continue;
+            const last = m.lastDueNotifAt || 0;
+            if (now - last < DUE_REMINDER_GAP_MS) continue;
+            await pushNotif(m.id, `💸 Your deposit is ৳${rAfZ(Math.abs(bal), 0)} less than your expense this month. Please deposit soon.`);
+            await updateDoc(doc(db, "flats", FLAT_ID, "members", m.id), { lastDueNotifAt: now });
+          }
+        } catch (e) {
+          console.error("checkDueDeposits failed", e);
+        } finally {
+          dueCheckRunning = false;
+        }
+      }
+      function myNotifs() {
+        return NOTIFS.filter((n) => n.to === currentUser?.id).sort((a, b) => b.createdAt - a.createdAt);
+      }
+      function updateBell() {
+        const unread = myNotifs().filter((n) => !n.read).length;
+        [document.getElementById("bell-dot"), document.getElementById("bell-dot-m")].forEach((dot) => {
+          if (!dot) return;
+          dot.style.display = unread > 0 ? "flex" : "none";
+          dot.textContent = unread > 9 ? "9+" : unread;
+        });
+      }
+      window.openNotifPanel = function () {
+        document.getElementById("notif-overlay").style.display = "block";
+        document.getElementById("notif-panel").style.display = "flex";
+        renderNotifPanel();
+        myNotifs()
+          .filter((n) => !n.read)
+          .forEach((n) =>
+            updateDoc(doc(db, "flats", FLAT_ID, "notifications", n.id), { read: true }).catch(() => {}),
+          );
+      };
+      window.closeNotifPanel = function () {
+        document.getElementById("notif-overlay").style.display = "none";
+        document.getElementById("notif-panel").style.display = "none";
+      };
+      function renderNotifPanel() {
+        const el = document.getElementById("notif-list");
+        const list = myNotifs();
+        if (!list.length) {
+          el.innerHTML = '<div class="empty">No notifications.</div>';
+          return;
+        }
+        el.innerHTML = list
+          .map(
+            (n) =>
+              `<div class="notif-item ${n.read ? "" : "unread"}"><div>${n.text}</div><div class="notif-item-time">${new Date(n.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</div></div>`,
+          )
+          .join("");
+      }
+
+      // ── CHAT ───────────────────────────────────────────────────────
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+      window.sendChatMsg = async function () {
+        const inp = document.getElementById("chat-input");
+        const text = inp.value.trim();
+        if (!text || !currentUser) return;
+        inp.value = "";
+        const id = "C" + Date.now() + Math.random().toString(36).slice(2, 7);
+        try {
+          await setDoc(doc(db, "flats", FLAT_ID, "chatMessages", id), {
+            id,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            text,
+            createdAt: Date.now(),
+          });
+        } catch (e) {
+          toast("❌ Message failed: " + e.message);
+        }
+      };
+      function renderChat() {
+        const el = document.getElementById("chat-messages");
+        if (!el) return;
+        if (!CHAT.length) {
+          el.innerHTML = '<div class="empty">No messages yet. Say hi! 👋</div>';
+          return;
+        }
+        el.innerHTML = CHAT.map((m) => {
+          const mine = m.senderId === currentUser?.id;
+          const time = new Date(m.createdAt).toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          return `<div class="chat-msg ${mine ? "mine" : "theirs"}">${
+            mine ? "" : `<div class="chat-meta"><span class="chat-sender">${escapeHtml(m.senderName)}</span></div>`
+          }<div class="chat-bubble">${escapeHtml(m.text)}</div><div class="chat-meta">${time}</div></div>`;
+        }).join("");
+        el.scrollTop = el.scrollHeight;
+      }
+
+      // ── MEAL SHEET (per-day, no lunch/dinner split) ───────────────
+      function getMeal(memberId, monthKey, day) {
+        const k = `${monthKey}-${String(day).padStart(2, "0")}`;
+        return MEALS[k]?.[memberId] || 0;
+      }
+      function buildSheetMonthSel() {
+        const sel = document.getElementById("sheet-month-sel");
+        const keys = new Set([META.monthKey]);
+        Object.keys(MEALS).forEach((k) => {
+          const p = k.split("-");
+          if (p.length >= 2) keys.add(p[0] + "-" + p[1]);
+        });
+        const sorted = [...keys].sort((a, b) => b.localeCompare(a));
+        const cur = sel.value || META.monthKey;
+        sel.innerHTML = sorted
+          .map((k) => `<option value="${k}"${k === cur ? "selected" : ""}>${mkLabel(k)}</option>`)
+          .join("");
+      }
+      function renderSheet() {
+        buildSheetMonthSel();
+        const mk = document.getElementById("sheet-month-sel").value || META.monthKey;
+        const days = daysInMonth(mk);
+        const mgr = isManager();
+        if (!MEMBERS.length) {
+          document.getElementById("sheet-container").innerHTML = '<div class="empty">👥 Add members from the Members tab.</div>';
+          return;
+        }
+
+        const mealsByDay = {};
+        for (let d = 1; d <= days; d++) {
+          let tot = 0;
+          MEMBERS.forEach((m) => (tot += getMeal(m.id, mk, d)));
+          mealsByDay[d] = tot;
+        }
+
+        const md = {};
+        MEMBERS.forEach((m) => {
+          md[m.id] = {
+            meals: 0,
+            exp: 0,
+            dep: DEPOSITS.filter((d) => d.mid === m.id).reduce((a, d) => a + d.amt, 0),
+          };
+        });
+        for (let d = 1; d <= days; d++) {
+          MEMBERS.forEach((m) => {
+            const v = getMeal(m.id, mk, d);
+            md[m.id].meals += v;
+          });
+        }
+        const totalMeals = MEMBERS.reduce((a, m) => a + md[m.id].meals, 0);
+        const totalCost = BAZAAR.filter((b) => b.date.startsWith(mk)).reduce((a, b) => a + b.total, 0);
+        const rate = totalMeals > 0 ? totalCost / totalMeals : 0;
+        MEMBERS.forEach((m) => {
+          md[m.id].exp = md[m.id].meals * rate;
+        });
+        MEMBERS.forEach((m) => (md[m.id].bal = md[m.id].dep - md[m.id].exp));
+
+        let h = `<table class="sheet"><thead><tr><th class="sh-head" style="text-align:left;padding:6px 12px;position:sticky;left:0;z-index:3;min-width:100px">Member</th>`;
+        for (let d = 1; d <= days; d++) {
+          const dd = new Date(mk + "-" + String(d).padStart(2, "0") + "T00:00:00");
+          const dn = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][dd.getDay()];
+          h += `<th class="sh-date-head" ${dd.getDay() === 5 ? 'style="background:#1a4a6e"' : ""}>${d}<br><span style="font-size:9px;font-weight:400">${dn}</span></th>`;
+        }
+        h += `<th class="sh-head" style="min-width:55px">Meals</th><th class="sh-head" style="min-width:70px">Expense</th><th class="sh-head" style="min-width:70px">Deposit</th><th class="sh-head" style="min-width:70px">Balance</th></tr></thead><tbody>`;
+        MEMBERS.forEach((m) => {
+          const d = md[m.id];
+          const bc = d.bal >= 0 ? "sh-bal-pos" : "sh-bal-neg";
+          h += `<tr ${m.id === currentUser?.id ? 'style="background:#fafff5"' : ""}><td class="sh-name">${m.name}${m.id === currentUser?.id ? " ✦" : ""}</td>`;
+          for (let day = 1; day <= days; day++) {
+            const v = getMeal(m.id, mk, day);
+            if (mgr)
+              h += `<td class="cell"><input type="number" min="0" max="20" value="${v || ""}" class="${v ? "has-val" : ""}" onchange="onMealChange(this,'${m.id}',${day},'${mk}')" onfocus="this.select()"></td>`;
+            else h += `<td class="cell"><input type="number" value="${v || ""}" readonly class="${v ? "has-val" : ""}"></td>`;
+          }
+          h += `<td class="sh-total">${d.meals}</td><td class="sh-cost">৳${rAfZ(d.exp, 0)}</td><td class="sh-cost">৳${d.dep}</td><td class="${bc}">${d.bal >= 0 ? "+" : ""}৳${rAfZ(d.bal, 0)}</td></tr>`;
+        });
+        h += `<tr style="background:#f1f5f9"><td class="sh-name" style="font-weight:700;font-size:12px">TOTAL</td>`;
+        for (let d = 1; d <= days; d++) {
+          const tot = mealsByDay[d];
+          h += `<td style="padding:4px 2px;text-align:center;font-size:11px;font-weight:700;background:#fef9c3;color:#92400e">${tot || ""}</td>`;
+        }
+        const tDep = MEMBERS.reduce((a, m) => a + md[m.id].dep, 0);
+        h += `<td class="sh-total">${totalMeals}</td><td class="sh-cost">৳${rAfZ(totalCost, 0)}</td><td class="sh-cost">৳${tDep}</td><td class="sh-rate">৳${rAfZ(rate, 1)}/meal</td></tr></tbody></table>`;
+        document.getElementById("sheet-container").innerHTML = h;
+      }
+
+      window.onMealChange = async function (inp, memberId, day, monthKey) {
+        if (!isManager()) {
+          inp.value = "";
+          toast("⚠️ Only Manager can edit");
+          return;
+        }
+        const v = Math.max(0, Math.min(20, parseInt(inp.value) || 0));
+        inp.value = v || "";
+        inp.className = v ? "has-val" : "";
+        const k = `${monthKey}-${String(day).padStart(2, "0")}`;
+        if (!MEALS[k]) MEALS[k] = {};
+        if (v) MEALS[k][memberId] = v;
+        else delete MEALS[k][memberId];
+        if (currentTab === "sheet") renderSheet();
+        try {
+          await setDoc(mealsRef, { [k]: { [memberId]: v || null } }, { merge: true });
+        } catch (e) {
+          toast("❌ Save failed: " + e.message);
+        }
+      };
+
+      // ── BAZAAR (no meal time) ────────────────────────────────────
+      window.addBazItem = function () {
+        const rows = document.querySelectorAll("#baz-items .item-row");
+        for (const r of rows) {
+          if (r.style.display === "none") {
+            r.style.display = "";
+            const nameInp = r.querySelector(".baz-item-name");
+            const costInp = r.querySelector(".baz-item-cost");
+            if (nameInp) nameInp.value = "";
+            if (costInp) costInp.value = "";
+            return;
+          }
+        }
+        toast("⚠️ Max 10 items per entry");
+      };
+      window.removeBazItem = function (btn) {
+        const row = btn.closest(".item-row");
+        const allRows = Array.from(document.querySelectorAll("#baz-items .item-row"));
+        if (row === allRows[0]) {
+          row.querySelector(".baz-item-name").value = "";
+          row.querySelector(".baz-item-cost").value = "";
+        } else {
+          row.querySelector(".baz-item-name").value = "";
+          row.querySelector(".baz-item-cost").value = "";
+          row.style.display = "none";
+        }
+        calcBazTotal();
+      };
+      window.calcBazTotal = function () {
+        let t = 0;
+        document.querySelectorAll("#baz-items .item-row .baz-item-cost").forEach((i) => (t += parseFloat(i.value) || 0));
+        document.getElementById("baz-total").textContent = "৳ " + rAfZ(t, 0);
+      };
+      window.clearBazForm = function () {
+        const rows = document.querySelectorAll("#baz-items .item-row");
+        rows.forEach((r, i) => {
+          r.querySelector(".baz-item-name").value = "";
+          r.querySelector(".baz-item-cost").value = "";
+          r.style.display = i === 0 ? "" : "none";
+        });
+        calcBazTotal();
+      };
+      window.saveBazaar = async function () {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        const date = document.getElementById("baz-date").value;
+        if (!date) {
+          toast("⚠️ Select a date");
+          return;
+        }
+        const items = [];
+        let total = 0;
+        document.querySelectorAll("#baz-items .item-row").forEach((r) => {
+          if (r.style.display === "none") return;
+          const name = r.querySelector(".baz-item-name").value.trim();
+          const cost = parseFloat(r.querySelector(".baz-item-cost").value) || 0;
+          if (name || cost) {
+            items.push({ name: name || "Item", cost });
+            total += cost;
+          }
+        });
+        if (!items.length || total === 0) {
+          toast("⚠️ Add at least one item");
+          return;
+        }
+        const id = "B" + Date.now();
+        await setDoc(doc(db, "flats", FLAT_ID, "bazaar", id), { id, date, items, total });
+        clearBazForm();
+        toast("✓ Bazaar entry saved!");
+      };
+      window.delBaz = async function (id) {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        await deleteDoc(doc(db, "flats", FLAT_ID, "bazaar", id));
+        toast("Entry deleted");
+      };
+      function renderBazPage() {
+        if (!document.getElementById("baz-date").value) document.getElementById("baz-date").value = todayStr();
+        renderBazHistory();
+      }
+      function renderBazHistory() {
+        const el = document.getElementById("baz-history");
+        const sorted = [...BAZAAR].sort((a, b) => b.date.localeCompare(a.date));
+        if (!sorted.length) {
+          el.innerHTML = '<div class="empty">No bazaar entries yet.</div>';
+          return;
+        }
+        const mgr = isManager();
+        let h = '<table class="simple"><thead><tr><th>Date</th><th>Items</th><th>Total</th>' + (mgr ? "<th></th>" : "") + "</tr></thead><tbody>";
+        sorted.forEach((b) => {
+          const items = b.items.map((i) => `${i.name} ৳${i.cost}`).join(", ");
+          h += `<tr><td>${fmtDate(b.date)}</td><td style="color:var(--muted);font-size:12px">${items}</td><td><span class="badge bb">৳${b.total}</span></td>${mgr ? `<td><button class="del-icon" onclick="delBaz('${b.id}')">✕</button></td>` : ""}</tr>`;
+        });
+        h += "</tbody></table>";
+        el.innerHTML = h;
+      }
+
+      // ── DEPOSIT ──────────────────────────────────────────────────
+      function renderDepPage() {
+        const mgr = isManager();
+        const sel = document.getElementById("dep-mem");
+        if (mgr) {
+          sel.innerHTML = MEMBERS.map((m) => `<option value="${m.id}">${m.name}</option>`).join("");
+        }
+        if (!document.getElementById("dep-date").value) document.getElementById("dep-date").value = todayStr();
+        renderDepHistory();
+      }
+      window.saveDeposit = async function () {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can add deposits");
+          return;
+        }
+        const mid = document.getElementById("dep-mem").value;
+        const amt = parseFloat(document.getElementById("dep-amt").value) || 0;
+        const date = document.getElementById("dep-date").value;
+        const note = document.getElementById("dep-note").value.trim();
+        if (!mid) {
+          toast("⚠️ Select a member");
+          return;
+        }
+        if (amt <= 0) {
+          toast("⚠️ Enter a valid amount");
+          return;
+        }
+        if (!date) {
+          toast("⚠️ Select a date");
+          return;
+        }
+        const id = "D" + Date.now();
+        await setDoc(doc(db, "flats", FLAT_ID, "deposits", id), {
+          id, mid, amt, date,
+          deposit_date: date,
+          note,
+          created_at: Date.now(),
+          updated_at: Date.now(),
+        });
+        document.getElementById("dep-amt").value = "";
+        document.getElementById("dep-note").value = "";
+        toast("✓ Deposit saved!");
+      };
+      window.editDep = async function (id) {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can edit deposits");
+          return;
+        }
+        const dep = DEPOSITS.find((d) => d.id === id);
+        if (!dep) return;
+        const newAmt = prompt("Edit amount (Tk):", dep.amt);
+        if (newAmt === null) return;
+        const amt = parseFloat(newAmt);
+        if (isNaN(amt) || amt <= 0) {
+          toast("⚠️ Invalid amount");
+          return;
+        }
+        const newDate = prompt("Edit date (YYYY-MM-DD):", dep.date || dep.deposit_date || "");
+        if (newDate === null) return;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+          toast("⚠️ Invalid date format. Use YYYY-MM-DD");
+          return;
+        }
+        await updateDoc(doc(db, "flats", FLAT_ID, "deposits", id), {
+          amt, date: newDate, deposit_date: newDate, updated_at: Date.now(),
+        });
+        toast("✓ Deposit updated!");
+      };
+      window.delDep = async function (id) {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can delete deposits");
+          return;
+        }
+        if (!confirm("Delete this deposit?")) return;
+        await deleteDoc(doc(db, "flats", FLAT_ID, "deposits", id));
+        toast("Deposit deleted");
+      };
+      function renderDepHistory() {
+        const el = document.getElementById("dep-history");
+        const titleEl = document.getElementById("dep-history-title");
+        const mgr = isManager();
+
+        if (mgr) {
+          if (titleEl) titleEl.innerHTML = "<span>📋 All Members' Deposits</span>";
+          if (!DEPOSITS.length) {
+            el.innerHTML = '<div class="empty">No deposits yet.</div>';
+            return;
+          }
+          let html = "";
+          MEMBERS.forEach((m) => {
+            const memberDeps = DEPOSITS.filter((d) => d.mid === m.id)
+              .sort((a, b) => (b.date || b.deposit_date || "").localeCompare(a.date || a.deposit_date || ""));
+            const total = memberDeps.reduce((a, d) => a + d.amt, 0);
+            html += `<div style="margin-bottom:18px">
+              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;padding:6px 10px;background:var(--bg);border-radius:6px;display:flex;justify-content:space-between;align-items:center">
+                <span>👤 ${m.name}${m.id === currentUser?.id ? ' <span style="font-size:10px;color:var(--muted)">(You)</span>' : ""}</span>
+                <span style="color:var(--primary);font-weight:700">Total: ৳${total}</span>
+              </div>`;
+            if (!memberDeps.length) {
+              html += '<div class="empty" style="font-size:12px;padding:8px 10px">No deposits</div>';
+            } else {
+              html += '<table class="simple"><thead><tr><th>Date</th><th>Amount</th><th>Note</th><th>Action</th></tr></thead><tbody>';
+              memberDeps.forEach((d) => {
+                const depDate = d.date || d.deposit_date || "";
+                html += `<tr>
+                  <td>${fmtDate(depDate)}</td>
+                  <td><span class="badge bg">৳${d.amt}</span></td>
+                  <td style="color:var(--muted);font-size:12px">${d.note || "—"}</td>
+                  <td style="white-space:nowrap">
+                    <button class="btn btn-ghost btn-sm" style="color:var(--primary);border:none;margin-right:4px" onclick="editDep('${d.id}')" title="Edit">✏️ Edit</button>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--danger);border:none" onclick="delDep('${d.id}')" title="Delete">🗑 Delete</button>
+                  </td>
+                </tr>`;
+              });
+              html += `</tbody></table>`;
+            }
+            html += `</div>`;
+          });
+          el.innerHTML = html;
+        } else {
+          if (titleEl) titleEl.innerHTML = "<span>📋 My Deposit History</span>";
+          const myDeps = DEPOSITS.filter((d) => d.mid === currentUser?.id)
+            .sort((a, b) => (b.date || b.deposit_date || "").localeCompare(a.date || a.deposit_date || ""));
+          if (!myDeps.length) {
+            el.innerHTML = '<div class="empty">You have no deposits yet.</div>';
+            return;
+          }
+          const total = myDeps.reduce((a, d) => a + d.amt, 0);
+          let h = '<table class="simple"><thead><tr><th>Date</th><th>Amount</th></tr></thead><tbody>';
+          myDeps.forEach((d) => {
+            const depDate = d.date || d.deposit_date || "";
+            h += `<tr>
+              <td>${fmtDate(depDate)}</td>
+              <td><span class="badge bg">৳${d.amt}</span></td>
+            </tr>`;
+          });
+          h += `</tbody></table>
+          <div style="margin-top:12px;padding:10px 14px;background:var(--sbg);border:1px solid #86efac;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;font-size:13px">Total Deposit</span>
+            <span style="font-weight:800;font-size:16px;color:var(--success)">৳${total} Tk</span>
+          </div>`;
+          el.innerHTML = h;
+        }
+      }
+
+      // ── BILLS ────────────────────────────────────────────────────
+      const BILL_LABELS = {
+        rent: "🏠 Bashabhara",
+        water: "💧 Water Bill",
+        electricity: "⚡ Electricity Bill",
+        wifi: "📶 WiFi Bill",
+        maid: "🧹 Maid Bill",
+        other: "📦 Others",
+      };
+      const BILL_COLS = ["rent", "water", "electricity", "wifi", "maid", "other"];
+      function billLabel(b) {
+        if (b.type === "other" && b.label) return "📦 " + b.label;
+        return BILL_LABELS[b.type] || b.type;
+      }
+      window.onBillTypeChange = function () {
+        const isOther = document.getElementById("bill-split-type").value === "other";
+        document.getElementById("bill-split-other-wrap").style.display = isOther ? "grid" : "none";
+      };
+      function fillBillRentMemberSelect() {
+        const sel = document.getElementById("bill-rent-mem");
+        if (!sel) return;
+        sel.innerHTML = MEMBERS.map((m) => `<option value="${m.id}">${m.name}</option>`).join("");
+        if (!document.getElementById("bill-rent-date").value) document.getElementById("bill-rent-date").value = todayStr();
+      }
+      window.saveBillRent = async function () {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        const mid = document.getElementById("bill-rent-mem").value;
+        const amt = parseFloat(document.getElementById("bill-rent-amt").value) || 0;
+        const date = document.getElementById("bill-rent-date").value;
+        if (!mid) {
+          toast("⚠️ Select a member");
+          return;
+        }
+        if (amt <= 0) {
+          toast("⚠️ Enter a valid amount");
+          return;
+        }
+        if (!date) {
+          toast("⚠️ Select a date");
+          return;
+        }
+        const id = "BL" + Date.now();
+        await setDoc(doc(db, "flats", FLAT_ID, "bills", id), {
+          id,
+          type: "rent",
+          date,
+          total: amt,
+          shares: { [mid]: amt },
+        });
+        document.getElementById("bill-rent-amt").value = "";
+        toast("✓ Rent added!");
+      };
+      window.saveBillSplit = async function () {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        const type = document.getElementById("bill-split-type").value;
+        const amt = parseFloat(document.getElementById("bill-split-amt").value) || 0;
+        const date = document.getElementById("bill-split-date").value;
+        const otherLabel = document.getElementById("bill-split-other-label").value.trim();
+        if (amt <= 0) {
+          toast("⚠️ Enter a valid amount");
+          return;
+        }
+        if (!date) {
+          toast("⚠️ Select a date");
+          return;
+        }
+        if (type === "other" && !otherLabel) {
+          toast("⚠️ Enter a bill name");
+          return;
+        }
+        if (!MEMBERS.length) {
+          toast("⚠️ No members found");
+          return;
+        }
+        const per = amt / MEMBERS.length;
+        const shares = {};
+        MEMBERS.forEach((m) => (shares[m.id] = rAfZ(per, 2)));
+        const id = "BL" + Date.now();
+        const payload = { id, type, date, total: amt, shares };
+        if (type === "other") payload.label = otherLabel;
+        await setDoc(doc(db, "flats", FLAT_ID, "bills", id), payload);
+        document.getElementById("bill-split-amt").value = "";
+        document.getElementById("bill-split-other-label").value = "";
+        toast("✓ Bill added & split equally!");
+      };
+      window.delBill = async function (id) {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can delete bills");
+          return;
+        }
+        if (!confirm("Delete this bill entry?")) return;
+        await deleteDoc(doc(db, "flats", FLAT_ID, "bills", id));
+        toast("Bill deleted");
+      };
+      window.editBill = async function (billId, memberId) {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can edit bills");
+          return;
+        }
+        const bill = BILLS.find((b) => b.id === billId);
+        if (!bill) return;
+        const curAmt = bill.shares && bill.shares[memberId] !== undefined ? bill.shares[memberId] : bill.total;
+        const newAmt = prompt("Edit amount (Tk) for this bill entry:", curAmt);
+        if (newAmt === null) return;
+        const amt = parseFloat(newAmt);
+        if (isNaN(amt) || amt <= 0) { toast("⚠️ Invalid amount"); return; }
+        const newNote = prompt("Edit note (optional):", bill.note || "");
+        if (newNote === null) return;
+        const updatedShares = { ...(bill.shares || {}), [memberId]: amt };
+        const updatedTotal = Object.values(updatedShares).reduce((a, v) => a + v, 0);
+        const updateData = { shares: updatedShares, total: updatedTotal, updated_at: Date.now() };
+        if (newNote.trim()) updateData.note = newNote.trim();
+        await updateDoc(doc(db, "flats", FLAT_ID, "bills", billId), updateData);
+        toast("✓ Bill updated!");
+      };
+      function renderBillsPage() {
+        const mgr = isManager();
+        fillBillRentMemberSelect();
+        const titleEl = document.getElementById("bills-history-title");
+        if (titleEl)
+          titleEl.innerHTML = mgr ? "<span>&#x1F4CB; Bill History (All Members)</span>" : "<span>&#x1F4CB; My Bill History</span>";
+        const hist = document.getElementById("bills-history");
+        if (!hist) return;
+
+        const sorted = [...BILLS].sort((a, b) => b.date.localeCompare(a.date));
+
+        function buildMemberGroup(member, billRows) {
+          const isSelf = member.id === currentUser?.id;
+          const total = billRows.reduce((a, r) => a + r.amt, 0);
+          const youTag = isSelf ? ' <span style="font-size:10px;color:var(--muted)">(You)</span>' : "";
+          let block = '<div style="margin-bottom:18px">';
+          block += '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;padding:6px 10px;background:var(--bg);border-radius:6px;display:flex;justify-content:space-between;align-items:center">';
+          block += '<span>&#x1F464; ' + escapeHtml(member.name) + youTag + '</span>';
+          block += '<span style="color:var(--primary);font-weight:700">Total: &#x9F3;' + rAfZ(total, 0) + '</span>';
+          block += '</div>';
+          if (!billRows.length) {
+            block += '<div class="empty" style="font-size:12px;padding:8px 10px">No bills</div>';
+          } else {
+            block += '<table class="simple"><thead><tr><th>Date</th><th>Bill Type</th><th>Amount</th><th>Note</th>';
+            if (mgr) block += '<th>Action</th>';
+            block += '</tr></thead><tbody>';
+            billRows.forEach(function(r) {
+              const bill = r.bill;
+              const amt = r.amt;
+              const note = bill.note || '&#8212;';
+              block += '<tr>';
+              block += '<td>' + fmtDate(bill.date) + '</td>';
+              block += '<td>' + billLabel(bill) + '</td>';
+              block += '<td><span class="badge bb">&#x9F3;' + rAfZ(amt, 0) + '</span></td>';
+              block += '<td style="color:var(--muted);font-size:12px">' + note + '</td>';
+              if (mgr) {
+                block += '<td style="white-space:nowrap">';
+                block += '<button class="btn btn-ghost btn-sm" style="color:var(--primary);border:none;margin-right:4px" onclick="editBill(\'' + bill.id + '\',\'' + member.id + '\')" title="Edit">&#x270F;&#xFE0F; Edit</button>';
+                block += '<button class="btn btn-ghost btn-sm" style="color:var(--danger);border:none" onclick="delBill(\'' + bill.id + '\')" title="Delete">&#x1F5D1; Delete</button>';
+                block += '</td>';
+              }
+              block += '</tr>';
+            });
+            block += '</tbody></table>';
+          }
+          block += '</div>';
+          return block;
+        }
+
+        if (mgr) {
+          if (!sorted.length) {
+            hist.innerHTML = '<div class="empty">No bills added yet.</div>';
+            return;
+          }
+          let html = "";
+          MEMBERS.forEach(function(m) {
+            const rows = sorted
+              .filter(function(b) { return b.shares && b.shares[m.id] !== undefined; })
+              .map(function(b) { return { bill: b, amt: b.shares[m.id] }; });
+            html += buildMemberGroup(m, rows);
+          });
+          hist.innerHTML = html;
+        } else {
+          const me = MEMBERS.find(function(m) { return m.id === currentUser?.id; });
+          if (!me) return;
+          const myRows = sorted
+            .filter(function(b) { return b.shares && b.shares[me.id] !== undefined; })
+            .map(function(b) { return { bill: b, amt: b.shares[me.id] }; });
+          if (!myRows.length) {
+            hist.innerHTML = '<div class="empty">No bills for you yet.</div>';
+            return;
+          }
+          const myTotal = myRows.reduce(function(a, r) { return a + r.amt; }, 0);
+          let html = buildMemberGroup(me, myRows);
+          html += '<div style="margin-top:4px;padding:10px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;display:flex;justify-content:space-between;align-items:center">';
+          html += '<span style="font-weight:700;font-size:13px">Total Bills</span>';
+          html += '<span style="font-weight:800;font-size:16px;color:var(--danger)">&#x9F3;' + rAfZ(myTotal, 0) + ' Tk</span>';
+          html += '</div>';
+          hist.innerHTML = html;
+        }
+      }
+
+      // ── DASHBOARD (formerly Summary) ────────────────────────────
+      function renderDashboard() {
+        document.getElementById("dash-month-sub").textContent = `Overview of meals, money & balances for ${mkLabel(META.monthKey)}`;
+        document.getElementById("dash-month-label2").textContent = mkLabel(META.monthKey) || "";
+        const mk = META.monthKey;
+        const days = daysInMonth(mk);
+        const md = {};
+        MEMBERS.forEach((m) => {
+          md[m.id] = {
+            meals: 0,
+            exp: 0,
+            // Dashboard is a shared view: always read from the unfiltered SUMMARY_DEPOSITS,
+            // never from DEPOSITS (which is intentionally restricted for the Deposit module).
+            dep: SUMMARY_DEPOSITS.filter((d) => d.mid === m.id).reduce((a, d) => a + d.amt, 0),
+          };
+        });
+        for (let d = 1; d <= days; d++) {
+          MEMBERS.forEach((m) => {
+            const v = getMeal(m.id, mk, d);
+            md[m.id].meals += v;
+          });
+        }
+        const tMarket = BAZAAR.filter((b) => b.date.startsWith(mk)).reduce((a, b) => a + b.total, 0);
+        const tMeals = MEMBERS.reduce((a, m) => a + md[m.id].meals, 0);
+        const mealRate = tMeals > 0 ? tMarket / tMeals : 0;
+        MEMBERS.forEach((m) => {
+          md[m.id].exp = md[m.id].meals * mealRate;
+        });
+        MEMBERS.forEach((m) => (md[m.id].bal = md[m.id].dep - md[m.id].exp));
+        const tDep = MEMBERS.reduce((a, m) => a + md[m.id].dep, 0);
+        const diff = tDep - tMarket;
+        document.getElementById("sum-stats").innerHTML = `
+    <div class="stat"><div class="stat-lbl">Total Market</div><div class="stat-val blue">৳${rAfZ(tMarket, 0)}</div></div>
+    <div class="stat"><div class="stat-lbl">Total Deposit</div><div class="stat-val">${tDep}</div></div>
+    <div class="stat"><div class="stat-lbl">Difference</div><div class="stat-val ${diff >= 0 ? "green" : "red"}">${diff >= 0 ? "+" : ""}৳${rAfZ(diff, 0)}</div></div>
+    <div class="stat"><div class="stat-lbl">Total Meals</div><div class="stat-val">${tMeals}</div></div>
+    <div class="stat"><div class="stat-lbl">Meal Rate</div><div class="stat-val warn">৳${rAfZ(mealRate, 2)}</div></div>`;
+        let h = '<table class="simple"><thead><tr><th>Name</th><th>Meals</th><th>Expense</th><th>Deposit</th><th>Balance</th></tr></thead><tbody>';
+        MEMBERS.forEach((m) => {
+          const d = md[m.id];
+          const pos = d.bal >= 0;
+          h += `<tr><td><b>${m.name}</b>${m.id === currentUser?.id ? " ✦" : ""}</td><td>${d.meals}</td><td>৳${rAfZ(d.exp, 0)}</td><td>৳${d.dep}</td><td><span class="badge ${pos ? "bg" : "br"}">${pos ? "▲ Will receive" : "▼ Will pay"} ৳${rAfZ(Math.abs(d.bal), 0)}</span></td></tr>`;
+        });
+        h += "</tbody></table>";
+        document.getElementById("sum-individual").innerHTML = h;
+      }
+
+      // ── VOTE (next month's manager) ────────────────────────────────
+      let selectedVoteId = null;
+      function renderVotePage() {
+        const mgr = isManager();
+        const sa = document.getElementById("vote-status-area");
+        const cc = document.getElementById("vote-cast-card");
+        const manager = MEMBERS.find((m) => m.id === META.managerId);
+        const totalVotes = Object.keys(META.votes || {}).length;
+        let sh = `<div class="manager-banner">👑 Current Manager: ${manager ? manager.name : "?"}</div>`;
+        sh += `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+    <div class="stat" style="flex:1;min-width:120px"><div class="stat-lbl">Voting</div><div class="stat-val" style="font-size:16px">${META.voteOpen ? '<span class="green">🟢 Open</span>' : '<span style="color:var(--muted)">🔴 Closed</span>'}</div></div>
+    <div class="stat" style="flex:1;min-width:120px"><div class="stat-lbl">Votes Cast</div><div class="stat-val">${totalVotes} / ${MEMBERS.length}</div></div></div>`;
+        if (mgr)
+          sh += `<div class="btn-row">${META.voteOpen ? `<button class="btn btn-danger" onclick="closeVoting()">🔒 Close Voting</button>` : `<button class="btn btn-success" onclick="openVoting()">🗳️ Start Voting</button>`} <button class="btn btn-ghost" onclick="showNewMonth()">🔄 New Month</button></div>`;
+        if (META.voteOpen && totalVotes === MEMBERS.length && totalVotes > 0)
+          sh += `<div style="background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:10px 14px;font-size:13px;color:#166534;margin-top:10px">✅ Everyone has voted!</div>`;
+        sa.innerHTML = sh;
+        const myVote = (META.votes || {})[currentUser?.id];
+        if (META.voteOpen && !myVote) {
+          cc.style.display = "block";
+          let opts = "";
+          MEMBERS.forEach((m) => {
+            opts += `<div class="vote-option ${selectedVoteId === m.id ? "selected" : ""}" id="vopt-${m.id}" onclick="selectVote('${m.id}')">${m.name}${m.id === META.managerId ? " 👑" : ""} ${m.id === currentUser?.id ? '<span style="font-size:11px;color:var(--muted)">(You)</span>' : ""}</div>`;
+          });
+          document.getElementById("vote-options").innerHTML = opts;
+          document.getElementById("vote-btn-row").innerHTML =
+            `<button class="btn btn-primary" onclick="castVote()">✓ Cast Vote</button>`;
+        } else if (myVote) {
+          cc.style.display = "block";
+          const voted = MEMBERS.find((m) => m.id === myVote);
+          document.getElementById("vote-options").innerHTML =
+            `<div style="background:#eff6ff;border:2px solid var(--primary);border-radius:8px;padding:14px;text-align:center;font-size:14px;font-weight:700;color:var(--primary)">✅ You voted for: ${voted ? voted.name : "?"}</div>`;
+          document.getElementById("vote-btn-row").innerHTML = "";
+        } else cc.style.display = "none";
+        renderVoteResults();
+      }
+      window.selectVote = function (id) {
+        selectedVoteId = id;
+        document.querySelectorAll(".vote-option").forEach((el) => el.classList.remove("selected"));
+        const el = document.getElementById("vopt-" + id);
+        if (el) el.classList.add("selected");
+      };
+      window.castVote = async function () {
+        if (!selectedVoteId) {
+          toast("⚠️ Select someone");
+          return;
+        }
+        const nv = { ...(META.votes || {}), [currentUser.id]: selectedVoteId };
+        await updateDoc(flatRef, { votes: nv });
+        toast("✓ Vote cast!");
+      };
+      window.openVoting = async function () {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        await updateDoc(flatRef, { voteOpen: true, votes: {} });
+        toast("🗳️ Voting started!");
+      };
+      window.closeVoting = async function () {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        await updateDoc(flatRef, { voteOpen: false });
+        toast("🔒 Voting closed");
+      };
+      function renderVoteResults() {
+        const el = document.getElementById("vote-results");
+        const votes = META.votes || {};
+        if (!Object.keys(votes).length) {
+          el.innerHTML = '<div class="empty">No votes cast yet.</div>';
+          return;
+        }
+        const counts = {};
+        MEMBERS.forEach((m) => (counts[m.id] = 0));
+        Object.values(votes).forEach((cid) => {
+          if (counts[cid] !== undefined) counts[cid]++;
+        });
+        const total = Object.values(counts).reduce((a, b) => a + b, 0);
+        let h = "";
+        MEMBERS.slice()
+          .sort((a, b) => counts[b.id] - counts[a.id])
+          .forEach((m, i) => {
+            const pct = total > 0 ? Math.round((counts[m.id] / total) * 100) : 0;
+            h += `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:700">${m.name}${m.id === META.managerId ? " 👑" : ""} ${i === 0 && counts[m.id] > 0 ? "🥇" : ""}</span><span style="font-size:12px;color:var(--muted)">${counts[m.id]} votes (${pct}%)</span></div><div class="vote-bar-wrap"><div class="vote-bar" style="width:${pct}%"></div></div></div>`;
+          });
+        el.innerHTML = h;
+      }
+
+      // ── NEW MONTH ────────────────────────────────────────────────
+      window.showNewMonth = function () {
+        if (!isManager()) {
+          toast("⚠️ Only Manager can do this");
+          return;
+        }
+        document.getElementById("nm-overlay").style.display = "flex";
+      };
+      window.doNewMonth = async function () {
+        showLoading("Starting new month...");
+        let newMgrId = META.managerId;
+        const votes = META.votes || {};
+        if (Object.keys(votes).length > 0) {
+          const counts = {};
+          MEMBERS.forEach((m) => (counts[m.id] = 0));
+          Object.values(votes).forEach((cid) => {
+            if (counts[cid] !== undefined) counts[cid]++;
+          });
+          const winner = MEMBERS.reduce((b, m) => (counts[m.id] > counts[b.id] ? m : b), MEMBERS[0]);
+          if (winner) newMgrId = winner.id;
+        }
+        const [bSnap, dSnap] = await Promise.all([getDocs(bazaarCol), getDocs(depositsCol)]);
+        await Promise.all([...bSnap.docs.map((d) => deleteDoc(d.ref)), ...dSnap.docs.map((d) => deleteDoc(d.ref))]);
+        await setDoc(mealsRef, {});
+        await updateDoc(flatRef, {
+          managerId: newMgrId,
+          monthKey: mkKey(),
+          voteOpen: false,
+          votes: {},
+        });
+        closeModal("nm-overlay");
+        hideLoading();
+        const newMgr = MEMBERS.find((m) => m.id === newMgrId);
+        toast(`✓ New month started! 👑 New Manager: ${newMgr ? newMgr.name : "?"}`);
+      };
+
+      // ── EXPORT ───────────────────────────────────────────────────
+      window.exportCSV = function () {
+        const mk = document.getElementById("sheet-month-sel").value || META.monthKey;
+        const days = daysInMonth(mk);
+        let csv = `Mess Manager - ${mkLabel(mk)}\nMember,`;
+        for (let d = 1; d <= days; d++) csv += `${d},`;
+        csv += "Meals,Expense,Deposit,Balance\n";
+        const totalCost = BAZAAR.filter((b) => b.date.startsWith(mk)).reduce((a, b) => a + b.total, 0);
+        let totalMeals = 0;
+        MEMBERS.forEach((m) => {
+          for (let d = 1; d <= days; d++) totalMeals += getMeal(m.id, mk, d);
+        });
+        const rate = totalMeals > 0 ? totalCost / totalMeals : 0;
+        MEMBERS.forEach((m) => {
+          let row = m.name + ",";
+          let meals = 0;
+          for (let d = 1; d <= days; d++) {
+            const v = getMeal(m.id, mk, d);
+            row += v + ",";
+            meals += v;
+          }
+          const exp = meals * rate;
+          const dep = DEPOSITS.filter((d) => d.mid === m.id).reduce((a, d) => a + d.amt, 0);
+          csv += row + meals + "," + rAfZ(exp, 0) + "," + dep + "," + rAfZ(dep - exp, 0) + "\n";
+        });
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `mess-${mk}.csv`;
+        a.click();
+        toast("✓ CSV exported!");
+      };
+
+      // ── MY PROFILE ───────────────────────────────────────────────
+      function renderProfile() {
+        const mgr = isManager();
+        document.getElementById("profile-hero-name").textContent = currentUser?.name || "";
+        document.getElementById("profile-hero-meta").textContent = (mgr ? "👑 Manager" : "👤 Member") + " · " + (currentUser?.phone || "");
+        document.getElementById("profile-name").value = currentUser?.name || "";
+        document.getElementById("profile-phone").value = currentUser?.phone || "";
+        const avEl = document.getElementById("profile-avatar-big");
+        if (currentUser?.photo) {
+          avEl.innerHTML = `<img src="${currentUser.photo}" alt="" />`;
+        } else {
+          avEl.textContent = (currentUser?.name || "?").charAt(0).toUpperCase();
+        }
+        const inviteCard = document.getElementById("profile-invite-card");
+        if (inviteCard) {
+          inviteCard.style.display = mgr ? "block" : "none";
+          if (mgr) document.getElementById("profile-invite-code").textContent = META.inviteCode || "------";
+        }
+      }
+
+      window.onProfilePhotoChange = async function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file || !currentUser) return;
+        if (!file.type.startsWith("image/")) {
+          toast("⚠️ Please choose an image file");
+          return;
+        }
+        if (file.size > 4 * 1024 * 1024) {
+          toast("⚠️ Image must be under 4MB");
+          return;
+        }
+        showLoading("Uploading photo...");
+        try {
+          const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          const path = `flats/${FLAT_ID}/profile-photos/${currentUser.id}.jpg`;
+          const ref = storageRef(storage, path);
+          await uploadString(ref, dataUrl, "data_url");
+          const url = await getDownloadURL(ref);
+          await updateDoc(doc(db, "flats", FLAT_ID, "members", currentUser.id), { photo: url });
+          currentUser.photo = url;
+          renderProfile();
+          applySidebarUser();
+          toast("✓ Profile photo updated!");
+        } catch (err) {
+          toast("❌ Upload failed: " + err.message);
+        } finally {
+          hideLoading();
+          e.target.value = "";
+        }
+      };
+
+      window.saveProfileInfo = async function () {
+        const name = document.getElementById("profile-name").value.trim();
+        const phone = document.getElementById("profile-phone").value.trim();
+        if (!name) {
+          toast("⚠️ Enter your name");
+          return;
+        }
+        if (phone.length < 11) {
+          toast("⚠️ Enter a valid 11-digit number");
+          return;
+        }
+        try {
+          await updateDoc(doc(db, "flats", FLAT_ID, "members", currentUser.id), { name, phone });
+          currentUser.name = name;
+          currentUser.phone = phone;
+          toast("✓ Profile updated!");
+        } catch (e) {
+          toast("❌ Update failed: " + e.message);
+        }
+      };
+
+      window.changeProfilePassword = async function () {
+        const pw1 = document.getElementById("profile-new-password").value;
+        const pw2 = document.getElementById("profile-confirm-password").value;
+        if (pw1.length < 4) {
+          toast("⚠️ Password must be at least 4 characters");
+          return;
+        }
+        if (pw1 !== pw2) {
+          toast("⚠️ Passwords do not match");
+          return;
+        }
+        try {
+          await updatePassword(auth.currentUser, pw1);
+          document.getElementById("profile-new-password").value = "";
+          document.getElementById("profile-confirm-password").value = "";
+          toast("✓ Password updated!");
+        } catch (e) {
+          if (e.code === "auth/requires-recent-login") {
+            toast("⚠️ Please log out and log in again before changing your password");
+          } else {
+            toast("❌ " + e.message);
+          }
+        }
+      };
+
+      window.regenerateInviteCode = async function () {
+        if (!isManager()) return;
+        if (!confirm("Regenerate invite code? The old code will stop working immediately.")) return;
+        const oldCode = META.inviteCode;
+        let newCode = genInviteCode();
+        const existing = await getDoc(doc(db, "inviteCodes", newCode));
+        if (existing.exists()) newCode = genInviteCode() + Math.floor(Math.random() * 9);
+        await setDoc(doc(db, "inviteCodes", newCode), { flatId: FLAT_ID });
+        await updateDoc(flatRef, { inviteCode: newCode });
+        if (oldCode) {
+          try { await deleteDoc(doc(db, "inviteCodes", oldCode)); } catch (_e) {}
+        }
+        toast("✓ New invite code generated!");
+      };
+
+      // ── WEB PUSH NOTIFICATIONS (foundation) ───────────────────────
+      // This lays the groundwork for real browser push notifications on
+      // top of the existing in-app notification system above. It does
+      // NOT replace pushNotif(); it is additive. To fully activate:
+      //   1. Generate a VAPID key pair (e.g. `npx web-push generate-vapid-keys`)
+      //   2. Fill in VAPID_PUBLIC_KEY below
+      //   3. Deploy a server endpoint (e.g. a Cloud Function) that reads
+      //      subscriptions from flats/{flatId}/pushSubscriptions and
+      //      sends the actual push payload using the matching private key.
+      //   4. Call sendWebPushIfSubscribed(...) from your server function
+      //      (a client can request a push, but cannot deliver one itself).
+      const VAPID_PUBLIC_KEY = ""; // <-- put your VAPID public key here
+      let swRegistration = null;
+
+      async function registerServiceWorker() {
+        if (!("serviceWorker" in navigator)) return null;
+        if (!window.isSecureContext) return null; // push requires HTTPS
+        try {
+          const swCode = `
+            self.addEventListener('push', function (event) {
+              let data = {};
+              try { data = event.data ? event.data.json() : {}; } catch (e) {}
+              const title = data.title || 'Mess Manager';
+              const body = data.body || 'You have a new notification';
+              event.waitUntil(self.registration.showNotification(title, {
+                body,
+                icon: data.icon || undefined,
+                badge: data.badge || undefined,
+                data: data.url ? { url: data.url } : {},
+              }));
+            });
+            self.addEventListener('notificationclick', function (event) {
+              event.notification.close();
+              const url = (event.notification.data && event.notification.data.url) || '/';
+              event.waitUntil(clients.openWindow(url));
+            });
+          `;
+          const blob = new Blob([swCode], { type: "application/javascript" });
+          const swUrl = URL.createObjectURL(blob);
+          swRegistration = await navigator.serviceWorker.register(swUrl);
+          return swRegistration;
+        } catch (e) {
+          console.warn("Service worker registration failed:", e);
+          return null;
+        }
+      }
+
+      function urlBase64ToUint8Array(base64String) {
+        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+        const rawData = atob(base64);
+        return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+      }
+
+      window.enablePushNotifications = async function () {
+        if (!VAPID_PUBLIC_KEY) {
+          toast("ℹ️ Push notifications need a VAPID key configured by the developer first.");
+          return;
+        }
+        if (!("Notification" in window)) {
+          toast("⚠️ This browser doesn't support notifications");
+          return;
+        }
+        const perm = await Notification.requestPermission();
+        if (perm !== "granted") {
+          toast("⚠️ Notification permission denied");
+          return;
+        }
+        const reg = swRegistration || (await registerServiceWorker());
+        if (!reg) {
+          toast("⚠️ Could not set up notifications (requires HTTPS)");
+          return;
+        }
+        try {
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+          });
+          await setDoc(
+            doc(db, "flats", FLAT_ID, "pushSubscriptions", currentUser.id),
+            { subscription: JSON.parse(JSON.stringify(sub)), updatedAt: Date.now() },
+          );
+          toast("✓ Push notifications enabled!");
+        } catch (e) {
+          toast("❌ Could not enable push: " + e.message);
+        }
+      };
+
+      // Called from pushNotif() above. With only client-side code, the
+      // browser cannot deliver a push to ANOTHER device by itself — that
+      // step needs a server (Cloud Function) using the VAPID private key.
+      // This function is a safe no-op placeholder until that server piece
+      // exists, so wiring it in now does not break anything.
+      function sendWebPushIfSubscribed(_memberId, _text) {
+        // Intentionally left as a no-op on the client. See comment above.
+      }
+
+      // Best-effort: try to register the service worker on load so it's
+      // ready once a VAPID key is configured. Never blocks the app.
+      if (window.isSecureContext) {
+        registerServiceWorker().catch(() => {});
+      }
+    </script>
+  </body>
+</html>
