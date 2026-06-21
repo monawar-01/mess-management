@@ -1,0 +1,37 @@
+.app-shell { display: flex; min-height: 100vh; }
+.sidebar {
+  width: var(--sidebar-w); background: #0f4a27; color: #fff;
+  display: flex; flex-direction: column; position: fixed;
+  top: 0; left: 0; height: 100vh; z-index: 100; transition: transform 0.25s;
+}
+.sidebar-header { padding: 1.1rem 1rem; border-bottom: 1px solid rgba(255,255,255,.12); }
+.brand { font-size: 1.05rem; font-weight: 700; display: block; }
+.role-badge { font-size: .7rem; background: rgba(255,255,255,.15); color: #cde8d8; padding: .2rem .55rem; border-radius: 999px; margin-top: .3rem; display: inline-block; }
+.sidebar-nav { flex: 1; overflow-y: auto; padding: .5rem 0; }
+.nav-item {
+  display: flex; align-items: center; gap: .7rem; padding: .6rem 1rem;
+  color: rgba(255,255,255,.75); font-size: .875rem; border: none; background: none;
+  width: 100%; text-align: left; transition: all .15s; text-decoration: none;
+}
+.nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+.nav-item.active { background: rgba(255,255,255,.16); color: #fff; font-weight: 500; }
+.nav-icon { width: 20px; text-align: center; }
+.sidebar-footer { padding: .875rem 1rem; border-top: 1px solid rgba(255,255,255,.12); }
+.user-info { display: flex; align-items: center; gap: .65rem; margin-bottom: .65rem; }
+.user-avatar { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: .8rem; flex-shrink: 0; }
+.user-name { font-size: .85rem; font-weight: 500; }
+.user-email { font-size: .72rem; color: rgba(255,255,255,.6); }
+.btn-logout { width: 100%; padding: .5rem; background: rgba(255,255,255,.08); color: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.15); border-radius: 7px; font-size: .8rem; cursor: pointer; transition: background .15s; }
+.btn-logout:hover { background: rgba(255,255,255,.15); }
+.main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
+.topbar { display: none; background: #fff; border-bottom: 1px solid var(--border); padding: .75rem 1rem; }
+.menu-toggle { background: none; border: none; font-size: 1.4rem; cursor: pointer; }
+.content { padding: 1.5rem; }
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 99; }
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .topbar { display: flex; align-items: center; }
+  .overlay { display: block; }
+}
