@@ -620,6 +620,9 @@
         color: var(--gold-soft);
         flex: 1;
         text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .bell-btn {
         position: relative;
@@ -1790,9 +1793,9 @@
     <div id="auth-screen" class="hidden">
       <div class="auth-box">
         <div class="auth-logo-row">
-          <div class="auth-logo-badge">🍛</div>
+          <div class="auth-logo-badge">🏠</div>
         </div>
-        <div class="auth-title">Mess Manager</div>
+        <div class="auth-title">Bachelor Home</div>
         <div class="auth-sub" id="auth-sub-text">Manage your flat's meals, money &amp; more</div>
 
         <div class="auth-tabs">
@@ -1908,7 +1911,7 @@
     <div id="app" style="display: none">
       <div class="mobile-topbar">
         <button class="hamburger-btn" onclick="openSidebar()" title="Menu">☰</button>
-        <div class="mt-title">🍛 Mess Manager</div>
+        <div class="mt-title" id="mt-title">🏠 Bachelor Home</div>
         <button class="bell-btn" onclick="openNotifPanel()" title="Notifications">
           🔔<span class="bell-dot" id="bell-dot-m" style="display: none">0</span>
         </button>
@@ -1918,7 +1921,7 @@
         <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
         <div class="sidebar" id="sidebar">
           <div class="sidebar-brand">
-            <div class="sidebar-brand-badge">🍛</div>
+            <div class="sidebar-brand-badge">🏠</div>
             <div class="sidebar-brand-text">
               <div class="sidebar-brand-title" id="sidebar-brand-title">Bachelor Home</div>
               <div class="sidebar-brand-sub" id="sidebar-flat-name">My Flat</div>
@@ -4883,13 +4886,14 @@
         registerServiceWorker().catch(() => {});
       }
 
-      // ── Character Reveal Animation: "Bachelor Home" sidebar title ──
-      // Splits the heading text into per-character <span>s and gives each
+      // ── Character Reveal Animation: "Bachelor Home" titles ──
+      // Splits a heading's text into per-character <span>s and gives each
       // one a staggered animation-delay so the letters reveal in sequence,
       // then loops continuously (via the infinite CSS animation) for as
-      // long as the app stays open.
-      (function initBrandRevealAnimation() {
-        const el = document.getElementById("sidebar-brand-title");
+      // long as the app stays open. Applied to both the sidebar brand
+      // title and the mobile top-bar title so the animation shows right
+      // after login on mobile too.
+      function applyBrandRevealAnimation(el) {
         if (!el) return;
         const text = el.textContent;
         const STEP = 0.07; // seconds between each character's start
@@ -4905,6 +4909,10 @@
             })
             .join("") +
           "</span>";
+      }
+      (function initBrandRevealAnimation() {
+        applyBrandRevealAnimation(document.getElementById("sidebar-brand-title"));
+        applyBrandRevealAnimation(document.getElementById("mt-title"));
       })();
     </script>
   </body>
