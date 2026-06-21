@@ -2196,6 +2196,7 @@
                     <option value="electricity">⚡ Electricity Bill</option>
                     <option value="wifi">📶 WiFi Bill</option>
                     <option value="maid">🧹 Maid Bill</option>
+                    <option value="gas">🔥 Gas Bill</option>
                     <option value="other">📦 Others</option>
                   </select>
                 </div>
@@ -2333,46 +2334,14 @@
             >
               👁️ View only access to Members list.
             </div>
-            <div class="card" id="members-add-card">
-              <div class="card-title"><span>➕ Add Member</span></div>
-              <div class="form-g g3">
-                <div>
-                  <label class="lbl">Name</label
-                  ><input type="text" id="mem-name" placeholder="e.g. Rahim" />
+            <div class="card" id="members-add-card" style="display: none">
+              <div class="card-title"><span>🎟️ Invite a Member</span></div>
+              <div style="font-size: 12px; color: var(--muted); margin-bottom: 12px">Share this code — they open the app, tap "Join Flat", and enter it along with their own name, phone, and password.</div>
+              <div class="invite-box">
+                <div class="invite-box-code" id="members-invite-code">------</div>
+                <div class="btn-row" style="margin-top: 0">
+                  <button class="btn btn-gold btn-sm" onclick="copyInviteCode('members-invite-code')">📋 Copy Code</button>
                 </div>
-                <div>
-                  <label class="lbl">Phone</label
-                  ><input
-                    type="tel"
-                    id="mem-phone"
-                    placeholder="01XXXXXXXXX"
-                    maxlength="11"
-                    oninput="this.value = this.value.replace(/\D/g, '')"
-                  />
-                </div>
-                <div>
-                  <label class="lbl">Password (optional)</label
-                  ><input
-                    type="text"
-                    id="mem-password"
-                    placeholder="Leave blank to let them set it"
-                  />
-                </div>
-              </div>
-              <div class="btn-row">
-                <button class="btn btn-primary" onclick="addMember()">
-                  ✓ Add Member
-                </button>
-              </div>
-              <div
-                style="
-                  font-size: 11px;
-                  color: var(--muted);
-                  margin-top: 8px;
-                "
-              >
-                💡 If you leave the password blank, the member can set their
-                own password the first time they log in.
               </div>
             </div>
             <div class="card">
@@ -2878,9 +2847,6 @@
         { selector: "#bill-rent-amt", action: () => window.saveBillRent() },
         { selector: "#bill-split-amt", action: () => window.saveBillSplit() },
         { selector: "#bill-split-other-label", action: () => window.saveBillSplit() },
-        { selector: "#mem-name", action: () => window.addMember() },
-        { selector: "#mem-phone", action: () => window.addMember() },
-        { selector: "#mem-password", action: () => window.addMember() },
         { selector: "#info-c-role", action: () => window.addInfoContact() },
         { selector: "#info-c-name", action: () => window.addInfoContact() },
         { selector: "#info-c-phone", action: () => window.addInfoContact() },
@@ -3316,39 +3282,6 @@
       }
 
       // ── MEMBERS ──────────────────────────────────────────────────
-      window.addMember = async function () {
-        if (!isManager()) {
-          toast("⚠️ Only Manager can do this");
-          return;
-        }
-        const name = document.getElementById("mem-name").value.trim();
-        const phone = document.getElementById("mem-phone").value.trim();
-        const password = document.getElementById("mem-password").value.trim();
-        if (!name) {
-          toast("⚠️ Enter a name");
-          return;
-        }
-        if (phone.length < 11) {
-          toast("⚠️ Enter a valid 11-digit number");
-          return;
-        }
-        if (password && password.length < 4) {
-          toast("⚠️ Password must be at least 4 characters");
-          return;
-        }
-        if (MEMBERS.find((m) => m.name.toLowerCase() === name.toLowerCase())) {
-          toast("⚠️ A member with this name already exists");
-          return;
-        }
-        if (MEMBERS.find((m) => m.phone === phone)) {
-          toast("⚠️ A member with this number already exists");
-          return;
-        }
-        toast(
-          "ℹ️ Ask them to use 'Join Flat' with your invite code — this creates their login automatically.",
-          5000,
-        );
-      };
       window.delMember = async function (id) {
         if (!isManager()) {
           toast("⚠️ Only Manager can do this");
@@ -3362,6 +3295,15 @@
         toast("Member removed");
       };
       function renderMembers() {
+        const inviteCard = document.getElementById("members-add-card");
+        const mgrForInvite = isManager();
+        if (inviteCard) {
+          inviteCard.style.display = mgrForInvite ? "block" : "none";
+          if (mgrForInvite) {
+            const codeEl = document.getElementById("members-invite-code");
+            if (codeEl) codeEl.textContent = META.inviteCode || "------";
+          }
+        }
         const el = document.getElementById("mem-list");
         if (!MEMBERS.length) {
           el.innerHTML = '<div class="empty">No members yet.</div>';
@@ -4036,9 +3978,10 @@
         electricity: "⚡ Electricity Bill",
         wifi: "📶 WiFi Bill",
         maid: "🧹 Maid Bill",
+        gas: "🔥 Gas Bill",
         other: "📦 Others",
       };
-      const BILL_COLS = ["rent", "water", "electricity", "wifi", "maid", "other"];
+      const BILL_COLS = ["rent", "water", "electricity", "wifi", "maid", "gas", "other"];
       function billLabel(b) {
         if (b.type === "other" && b.label) return "📦 " + b.label;
         return BILL_LABELS[b.type] || b.type;
