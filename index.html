@@ -392,6 +392,59 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      /* ── Character Reveal Animation for "Bachelor Home" ── */
+      .brand-reveal {
+        display: inline-block;
+        white-space: nowrap;
+      }
+      .brand-reveal .char {
+        display: inline-block;
+        opacity: 0;
+        transform: translateY(8px);
+        background: linear-gradient(180deg, #fff 0%, var(--gold-soft) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: charReveal 3.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+      }
+      .brand-reveal .char.is-space {
+        width: 0.32em;
+      }
+      @keyframes charReveal {
+        0% {
+          opacity: 0;
+          transform: translateY(8px) scale(0.85);
+          filter: blur(2px);
+        }
+        12% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          filter: blur(0);
+        }
+        75% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          filter: blur(0);
+        }
+        92% {
+          opacity: 0;
+          transform: translateY(-6px) scale(0.92);
+          filter: blur(1px);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(8px) scale(0.85);
+          filter: blur(2px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .brand-reveal .char {
+          animation: none;
+          opacity: 1;
+          transform: none;
+          filter: none;
+        }
+      }
       .sidebar-brand-sub {
         font-size: 10.5px;
         color: var(--gold-soft);
@@ -1867,7 +1920,7 @@
           <div class="sidebar-brand">
             <div class="sidebar-brand-badge">🍛</div>
             <div class="sidebar-brand-text">
-              <div class="sidebar-brand-title">Bachelor Home</div>
+              <div class="sidebar-brand-title" id="sidebar-brand-title">Bachelor Home</div>
               <div class="sidebar-brand-sub" id="sidebar-flat-name">My Flat</div>
             </div>
             <button class="sidebar-close-btn" onclick="closeSidebar()">✕</button>
@@ -4829,6 +4882,30 @@
       if (window.isSecureContext) {
         registerServiceWorker().catch(() => {});
       }
+
+      // ── Character Reveal Animation: "Bachelor Home" sidebar title ──
+      // Splits the heading text into per-character <span>s and gives each
+      // one a staggered animation-delay so the letters reveal in sequence,
+      // then loops continuously (via the infinite CSS animation) for as
+      // long as the app stays open.
+      (function initBrandRevealAnimation() {
+        const el = document.getElementById("sidebar-brand-title");
+        if (!el) return;
+        const text = el.textContent;
+        const STEP = 0.07; // seconds between each character's start
+        el.innerHTML =
+          '<span class="brand-reveal">' +
+          [...text]
+            .map((ch, i) => {
+              const isSpace = ch === " ";
+              const delay = (i * STEP).toFixed(2) + "s";
+              const cls = "char" + (isSpace ? " is-space" : "");
+              const safeCh = isSpace ? "&nbsp;" : ch;
+              return `<span class="${cls}" style="animation-delay:${delay}">${safeCh}</span>`;
+            })
+            .join("") +
+          "</span>";
+      })();
     </script>
   </body>
 </html>
