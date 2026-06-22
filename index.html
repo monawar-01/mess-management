@@ -3565,11 +3565,12 @@
         }
         const note = document.getElementById("info-note").value.trim();
         const contacts = Array.isArray(INFO.contacts) ? [...INFO.contacts] : [];
-        contacts.push({ id: "CT" + Date.now(), role, name, phone });
-        await setDoc(infoRef, { contacts, note }, { merge: true });
+        contacts.push({ id: "CT" + Date.now(), role, name, phone, note });
+        await setDoc(infoRef, { contacts }, { merge: true });
         document.getElementById("info-c-role").value = "";
         document.getElementById("info-c-name").value = "";
         document.getElementById("info-c-phone").value = "";
+        document.getElementById("info-note").value = "";
         toast("✓ Contact added");
       };
       window.delInfoContact = async function (id) {
@@ -3582,23 +3583,17 @@
         toast("Contact removed");
       };
       function renderInfo() {
-        if (isManager()) {
-          document.getElementById("info-note").value = INFO.note || "";
-        }
         const el = document.getElementById("info-view");
         const contacts = Array.isArray(INFO.contacts) ? INFO.contacts : [];
-        if (!contacts.length && !INFO.note) {
+        if (!contacts.length) {
           el.innerHTML = '<div class="empty">No information added yet.</div>';
           return;
         }
         const mgr = isManager();
         let h = "";
         contacts.forEach((c) => {
-          h += `<div class="contact-card" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div><div class="c-label">${escapeHtml(c.role)}</div><div class="c-name">${escapeHtml(c.name) || "—"}</div>${c.phone ? `<a class="c-phone" href="tel:${c.phone}">📞 ${c.phone}</a>` : ""}</div>${mgr ? `<button class="btn btn-danger-o btn-sm" onclick="delInfoContact('${c.id}')">✕</button>` : ""}</div>`;
+          h += `<div class="contact-card" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div><div class="c-label">${escapeHtml(c.role)}</div><div class="c-name">${escapeHtml(c.name) || "—"}</div>${c.phone ? `<a class="c-phone" href="tel:${c.phone}">📞 ${c.phone}</a>` : ""}${c.note ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">📝 ${escapeHtml(c.note)}</div>` : ""}</div>${mgr ? `<button class="btn btn-danger-o btn-sm" onclick="delInfoContact('${c.id}')">✕</button>` : ""}</div>`;
         });
-        if (INFO.note) {
-          h += `<div class="contact-card"><div class="c-label">📝 Note</div><div style="font-size:13px">${escapeHtml(INFO.note)}</div></div>`;
-        }
         el.innerHTML = h;
       }
 
@@ -3909,7 +3904,7 @@
             <div style="font-size:22px;font-weight:800;color:${myBalColor}">${myData.bal >= 0 ? "+" : ""}৳${rAfZ(myData.bal,0)}</div>
           </div>
           <div style="flex:1;min-width:120px;background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:10px 14px;text-align:center">
-            <div style="font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.4px">Total Market</div>
+            <div style="font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.4px">Total Expense</div>
             <div style="font-size:22px;font-weight:800;color:#92400e">৳${rAfZ(totalCost,0)}</div>
           </div>
           <div style="flex:1;min-width:120px;background:#f3e8ff;border:1px solid #d8b4fe;border-radius:10px;padding:10px 14px;text-align:center">
@@ -4451,9 +4446,9 @@
         const tDep = MEMBERS.reduce((a, m) => a + md[m.id].dep, 0);
         const diff = tDep - tMarket;
         document.getElementById("sum-stats").innerHTML = `
-    <div class="stat"><div class="stat-lbl">Total Market</div><div class="stat-val blue">৳${rAfZ(tMarket, 0)}</div></div>
+    <div class="stat"><div class="stat-lbl">Total Expense</div><div class="stat-val blue">৳${rAfZ(tMarket, 0)}</div></div>
     <div class="stat"><div class="stat-lbl">Total Deposit</div><div class="stat-val">${tDep}</div></div>
-    <div class="stat"><div class="stat-lbl">Difference</div><div class="stat-val ${diff >= 0 ? "green" : "red"}">${diff >= 0 ? "+" : ""}৳${rAfZ(diff, 0)}</div></div>
+    <div class="stat"><div class="stat-lbl">Available Balance</div><div class="stat-val ${diff >= 0 ? "green" : "red"}">${diff >= 0 ? "+" : ""}৳${rAfZ(diff, 0)}</div></div>
     <div class="stat"><div class="stat-lbl">Total Meals</div><div class="stat-val">${tMeals}</div></div>
     <div class="stat"><div class="stat-lbl">Meal Rate</div><div class="stat-val warn">৳${rAfZ(mealRate, 2)}</div></div>`;
         let h = '<table class="simple"><thead><tr><th>Name</th><th>Meals</th><th>Expense</th><th>Deposit</th><th>Balance</th></tr></thead><tbody>';
