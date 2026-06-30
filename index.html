@@ -3260,6 +3260,7 @@
               META = s.data();
               applyRoleUI();
               refresh();
+              maybeAutoNewMonth();
             }
           }),
         );
@@ -3352,6 +3353,7 @@
         checkDueDeposits();
         if (dueCheckInterval) clearInterval(dueCheckInterval);
         dueCheckInterval = setInterval(checkDueDeposits, 60 * 60 * 1000);
+        maybeAutoNewMonth();
       }
 
       window.doLogout = function () {
@@ -3947,6 +3949,11 @@
           toast("⚠️ Only Manager can edit");
           return;
         }
+        if (monthKey !== META.monthKey) {
+          renderSheet();
+          toast("🔒 Past month is locked, can't edit");
+          return;
+        }
         const v = Math.max(0, Math.min(20, parseInt(inp.value) || 0));
         inp.value = v || "";
         inp.className = v ? "has-val" : "";
@@ -4014,6 +4021,10 @@
           toast("⚠️ Select a date");
           return;
         }
+        if (!date.startsWith(META.monthKey)) {
+          toast("🔒 Can only add bazaar entries for the current month");
+          return;
+        }
         const items = [];
         let total = 0;
         document.querySelectorAll("#baz-items .item-row").forEach((r) => {
@@ -4037,6 +4048,11 @@
       window.delBaz = async function (id) {
         if (!isManager()) {
           toast("⚠️ Only Manager can do this");
+          return;
+        }
+        const b = BAZAAR.find((x) => x.id === id);
+        if (b && !b.date.startsWith(META.monthKey)) {
+          toast("🔒 Past month entries are locked");
           return;
         }
         await deleteDoc(doc(db, "flats", FLAT_ID, "bazaar", id));
@@ -4094,6 +4110,10 @@
           toast("⚠️ Select a date");
           return;
         }
+        if (!date.startsWith(META.monthKey)) {
+          toast("🔒 Can only add deposits for the current month");
+          return;
+        }
         const id = "D" + Date.now();
         await setDoc(doc(db, "flats", FLAT_ID, "deposits", id), {
           id, mid, amt, date,
@@ -4113,6 +4133,10 @@
         }
         const dep = DEPOSITS.find((d) => d.id === id);
         if (!dep) return;
+        if (!(dep.date || dep.deposit_date || "").startsWith(META.monthKey)) {
+          toast("🔒 Past month deposits are locked");
+          return;
+        }
         const newAmt = prompt("Edit amount (Tk):", dep.amt);
         if (newAmt === null) return;
         const amt = parseFloat(newAmt);
@@ -4134,6 +4158,11 @@
       window.delDep = async function (id) {
         if (!isManager()) {
           toast("⚠️ Only Manager can delete deposits");
+          return;
+        }
+        const dep = DEPOSITS.find((d) => d.id === id);
+        if (dep && !(dep.date || dep.deposit_date || "").startsWith(META.monthKey)) {
+          toast("🔒 Past month deposits are locked");
           return;
         }
         if (!confirm("Delete this deposit?")) return;
@@ -4559,6 +4588,20 @@
         }
         document.getElementById("nm-overlay").style.display = "flex";
       };
+      let autoNewMonthInFlight = false;
+      function maybeAutoNewMonth() {
+        if (!isManager()) return; // only the current manager's client triggers the rollover
+        if (autoNewMonthInFlight) return;
+        if (!META.monthKey) return;
+        if (mkKey() === META.monthKey) return; // still same calendar month, nothing to do
+        autoNewMonthInFlight = true;
+        doNewMonth()
+          .catch((e) => console.error("Auto new month failed:", e))
+          .finally(() => {
+            autoNewMonthInFlight = false;
+          });
+      }
+
       window.doNewMonth = async function () {
         showLoading("Starting new month...");
         let newMgrId = META.managerId;
@@ -4572,9 +4615,9 @@
           const winner = MEMBERS.reduce((b, m) => (counts[m.id] > counts[b.id] ? m : b), MEMBERS[0]);
           if (winner) newMgrId = winner.id;
         }
-        const [bSnap, dSnap] = await Promise.all([getDocs(bazaarCol), getDocs(depositsCol)]);
-        await Promise.all([...bSnap.docs.map((d) => deleteDoc(d.ref)), ...dSnap.docs.map((d) => deleteDoc(d.ref))]);
-        await setDoc(mealsRef, {});
+        // NOTE: previous months' bazaar/deposit/meal data is intentionally KEPT
+        // (not deleted) so it stays viewable later. Only the active month rolls
+        // forward and old-month entries get locked from editing.
         await updateDoc(flatRef, {
           managerId: newMgrId,
           monthKey: mkKey(),
