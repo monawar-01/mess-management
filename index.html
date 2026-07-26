@@ -1467,6 +1467,27 @@
         background: var(--gold-dim);
         border-left-color: var(--gold);
       }
+      .notif-item-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .notif-item-del {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1;
+        padding: 2px 4px;
+        border-radius: 6px;
+        flex-shrink: 0;
+      }
+      .notif-item-del:hover {
+        color: var(--danger);
+        background: var(--dbg);
+      }
       .notif-item-time {
         font-size: 10px;
         color: var(--muted);
@@ -2494,6 +2515,10 @@
 
             <div class="card">
               <div class="card-title"><span>🔒 Change Password</span></div>
+              <div style="margin-bottom: 12px">
+                <label class="lbl">Current Password</label>
+                <input type="password" id="profile-current-password" placeholder="Needed only if session has expired" />
+              </div>
               <div class="form-g g2">
                 <div>
                   <label class="lbl">New Password</label>
@@ -2519,12 +2544,6 @@
                   <button class="btn btn-ghost btn-sm" onclick="regenerateInviteCode()">🔄 Regenerate</button>
                 </div>
               </div>
-            </div>
-
-            <div class="card">
-              <div class="card-title"><span>🔔 Push Notifications</span></div>
-              <div style="font-size: 12px; color: var(--muted); margin-bottom: 12px">Get alerts on this device even when the app is closed.</div>
-              <button class="btn btn-ghost" onclick="enablePushNotifications()">🔔 Enable Push Notifications</button>
             </div>
           </div>
           <!-- MEMBERS -->
@@ -2759,13 +2778,22 @@
     <div class="notif-panel" id="notif-panel" style="display: none">
       <div class="notif-panel-head">
         <b>🔔 Notifications</b>
-        <button
-          class="btn btn-ghost btn-sm"
-          style="color: #fff; border-color: rgba(255, 255, 255, 0.4)"
-          onclick="closeNotifPanel()"
-        >
-          ✕
-        </button>
+        <div style="display: flex; gap: 6px">
+          <button
+            class="btn btn-ghost btn-sm"
+            style="color: #fff; border-color: rgba(255, 255, 255, 0.4)"
+            onclick="clearAllNotifs()"
+          >
+            🗑️ Clear All
+          </button>
+          <button
+            class="btn btn-ghost btn-sm"
+            style="color: #fff; border-color: rgba(255, 255, 255, 0.4)"
+            onclick="closeNotifPanel()"
+          >
+            ✕
+          </button>
+        </div>
       </div>
       <div class="notif-list" id="notif-list"></div>
     </div>
@@ -2815,6 +2843,8 @@
         signOut,
         onAuthStateChanged,
         updatePassword,
+        reauthenticateWithCredential,
+        EmailAuthProvider,
       } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
       import {
         getFirestore,
@@ -2941,6 +2971,12 @@
           month: "long",
           year: "numeric",
         });
+      }
+      // Past-month entries are locked by default to prevent accidental edits,
+      // but the Manager can still knowingly override the lock to fix a
+      // genuine mistake (e.g. a forgotten meal entry or a wrong bazaar cost).
+      function confirmPastMonthOverride() {
+        return confirm("⚠️ This is a PAST month, already closed. Are you sure you want to edit/add it anyway?");
       }
       function daysInMonth(k) {
         if (!k) return 30;
@@ -3147,7 +3183,14 @@
             btn.textContent = "Join Flat →";
             return;
           }
-          const flatId = codeSnap.data().flatId;
+          const codeData = codeSnap.data();
+          if (codeData.expiresAt && Date.now() > codeData.expiresAt) {
+            errEl.textContent = "❌ This invite code has expired. Ask the Manager for the current one.";
+            btn.disabled = false;
+            btn.textContent = "Join Flat →";
+            return;
+          }
+          const flatId = codeData.flatId;
           const cred = await createUserWithEmailAndPassword(auth, phoneToEmail(phone), password);
           const uid = cred.user.uid;
           await setDoc(doc(db, "flats", flatId, "members", uid), {
@@ -3694,8 +3737,6 @@
           read: false,
           createdAt: Date.now(),
         });
-        // Foundation for Web Push: also fan out a push to subscribed devices.
-        try { sendWebPushIfSubscribed(realTo, text); } catch (_e) {}
       }
 
       const DUE_REMINDER_GAP_MS = 3 * 24 * 60 * 60 * 1000;
@@ -3778,10 +3819,39 @@
         el.innerHTML = list
           .map(
             (n) =>
-              `<div class="notif-item ${n.read ? "" : "unread"}"><div>${n.text}</div><div class="notif-item-time">${new Date(n.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</div></div>`,
+              `<div class="notif-item ${n.read ? "" : "unread"}">` +
+              `<div class="notif-item-row">` +
+              `<div>${n.text}</div>` +
+              `<button class="notif-item-del" title="Delete" onclick="deleteNotif('${n.id}')">✕</button>` +
+              `</div>` +
+              `<div class="notif-item-time">${new Date(n.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</div>` +
+              `</div>`,
           )
           .join("");
       }
+      window.deleteNotif = async function (id) {
+        try {
+          await deleteDoc(doc(db, "flats", FLAT_ID, "notifications", id));
+        } catch (e) {
+          toast("❌ Delete failed: " + e.message);
+        }
+      };
+      window.clearAllNotifs = async function () {
+        const list = myNotifs();
+        if (!list.length) {
+          toast("No notifications to clear");
+          return;
+        }
+        if (!confirm(`Delete all ${list.length} notification(s)?`)) return;
+        try {
+          await Promise.all(
+            list.map((n) => deleteDoc(doc(db, "flats", FLAT_ID, "notifications", n.id)).catch(() => {})),
+          );
+          toast("✓ Notifications cleared");
+        } catch (e) {
+          toast("❌ Clear failed: " + e.message);
+        }
+      };
 
       // ── CHAT ───────────────────────────────────────────────────────
       function escapeHtml(s) {
@@ -3950,9 +4020,10 @@
           return;
         }
         if (monthKey !== META.monthKey) {
-          renderSheet();
-          toast("🔒 Past month is locked, can't edit");
-          return;
+          if (!confirmPastMonthOverride()) {
+            renderSheet();
+            return;
+          }
         }
         const v = Math.max(0, Math.min(20, parseInt(inp.value) || 0));
         inp.value = v || "";
@@ -4022,8 +4093,7 @@
           return;
         }
         if (!date.startsWith(META.monthKey)) {
-          toast("🔒 Can only add bazaar entries for the current month");
-          return;
+          if (!confirmPastMonthOverride()) return;
         }
         const items = [];
         let total = 0;
@@ -4052,8 +4122,7 @@
         }
         const b = BAZAAR.find((x) => x.id === id);
         if (b && !b.date.startsWith(META.monthKey)) {
-          toast("🔒 Past month entries are locked");
-          return;
+          if (!confirmPastMonthOverride()) return;
         }
         await deleteDoc(doc(db, "flats", FLAT_ID, "bazaar", id));
         toast("Entry deleted");
@@ -4111,8 +4180,7 @@
           return;
         }
         if (!date.startsWith(META.monthKey)) {
-          toast("🔒 Can only add deposits for the current month");
-          return;
+          if (!confirmPastMonthOverride()) return;
         }
         const id = "D" + Date.now();
         await setDoc(doc(db, "flats", FLAT_ID, "deposits", id), {
@@ -4134,8 +4202,7 @@
         const dep = DEPOSITS.find((d) => d.id === id);
         if (!dep) return;
         if (!(dep.date || dep.deposit_date || "").startsWith(META.monthKey)) {
-          toast("🔒 Past month deposits are locked");
-          return;
+          if (!confirmPastMonthOverride()) return;
         }
         const newAmt = prompt("Edit amount (Tk):", dep.amt);
         if (newAmt === null) return;
@@ -4162,8 +4229,7 @@
         }
         const dep = DEPOSITS.find((d) => d.id === id);
         if (dep && !(dep.date || dep.deposit_date || "").startsWith(META.monthKey)) {
-          toast("🔒 Past month deposits are locked");
-          return;
+          if (!confirmPastMonthOverride()) return;
         }
         if (!confirm("Delete this deposit?")) return;
         await deleteDoc(doc(db, "flats", FLAT_ID, "deposits", id));
@@ -4589,18 +4655,29 @@
         document.getElementById("nm-overlay").style.display = "flex";
       };
       let autoNewMonthInFlight = false;
+      // NOTE: previously this only ran on the Manager's client, so if the
+      // Manager never opened the app on the day the month rolled over, the
+      // rollover simply never happened. Now ANY member's open app can
+      // trigger it (it's a safe, idempotent operation), and a periodic
+      // safety-net check (below) runs even if no other Firestore update
+      // happens to re-fire the onSnapshot listener.
       function maybeAutoNewMonth() {
-        if (!isManager()) return; // only the current manager's client triggers the rollover
         if (autoNewMonthInFlight) return;
         if (!META.monthKey) return;
         if (mkKey() === META.monthKey) return; // still same calendar month, nothing to do
         autoNewMonthInFlight = true;
         doNewMonth()
-          .catch((e) => console.error("Auto new month failed:", e))
+          .catch((e) => console.error("Auto new month failed (will retry from any member's open app, or via the periodic check):", e))
           .finally(() => {
             autoNewMonthInFlight = false;
           });
       }
+      // Safety-net: re-check every 15 minutes in case the app is left open
+      // overnight with no other Firestore activity to re-trigger the
+      // onSnapshot-based check above.
+      setInterval(() => {
+        if (META && META.monthKey) maybeAutoNewMonth();
+      }, 15 * 60 * 1000);
 
       window.doNewMonth = async function () {
         showLoading("Starting new month...");
@@ -4782,6 +4859,7 @@
       };
 
       window.changeProfilePassword = async function () {
+        const pwCurrent = document.getElementById("profile-current-password").value;
         const pw1 = document.getElementById("profile-new-password").value;
         const pw2 = document.getElementById("profile-confirm-password").value;
         if (pw1.length < 4) {
@@ -4792,23 +4870,46 @@
           toast("⚠️ Passwords do not match");
           return;
         }
-        try {
-          await updatePassword(auth.currentUser, pw1);
+        const clearFields = () => {
+          document.getElementById("profile-current-password").value = "";
           document.getElementById("profile-new-password").value = "";
           document.getElementById("profile-confirm-password").value = "";
+        };
+        try {
+          await updatePassword(auth.currentUser, pw1);
+          clearFields();
           toast("✓ Password updated!");
         } catch (e) {
           if (e.code === "auth/requires-recent-login") {
-            toast("⚠️ Please log out and log in again before changing your password");
+            // Instead of forcing a logout/login round-trip, reauthenticate
+            // right here using the current password the user just entered.
+            if (!pwCurrent) {
+              toast("⚠️ Your session has expired — enter your Current Password above to confirm this change");
+              return;
+            }
+            try {
+              const credential = EmailAuthProvider.credential(auth.currentUser.email, pwCurrent);
+              await reauthenticateWithCredential(auth.currentUser, credential);
+              await updatePassword(auth.currentUser, pw1);
+              clearFields();
+              toast("✓ Password updated!");
+            } catch (e2) {
+              if (e2.code === "auth/invalid-credential" || e2.code === "auth/wrong-password") {
+                toast("❌ Current password is incorrect");
+              } else {
+                toast("❌ " + e2.message);
+              }
+            }
           } else {
             toast("❌ " + e.message);
           }
         }
       };
 
+      const INVITE_GRACE_MS = 24 * 60 * 60 * 1000; // old code stays valid 24h after regenerate
       window.regenerateInviteCode = async function () {
         if (!isManager()) return;
-        if (!confirm("Regenerate invite code? The old code will stop working immediately.")) return;
+        if (!confirm("Regenerate invite code? The old code will keep working for 24 more hours, then stop.")) return;
         const oldCode = META.inviteCode;
         let newCode = genInviteCode();
         const existing = await getDoc(doc(db, "inviteCodes", newCode));
@@ -4816,113 +4917,15 @@
         await setDoc(doc(db, "inviteCodes", newCode), { flatId: FLAT_ID });
         await updateDoc(flatRef, { inviteCode: newCode });
         if (oldCode) {
-          try { await deleteDoc(doc(db, "inviteCodes", oldCode)); } catch (_e) {}
+          // Don't delete immediately -- anyone mid-registration with the old
+          // code would suddenly get "Invalid invite code". Instead mark it
+          // with an expiry and let it keep working for a short grace period.
+          try {
+            await updateDoc(doc(db, "inviteCodes", oldCode), { expiresAt: Date.now() + INVITE_GRACE_MS });
+          } catch (_e) {}
         }
-        toast("✓ New invite code generated!");
+        toast("✓ New invite code generated! Old code still works for 24h.");
       };
-
-      // ── WEB PUSH NOTIFICATIONS (foundation) ───────────────────────
-      // This lays the groundwork for real browser push notifications on
-      // top of the existing in-app notification system above. It does
-      // NOT replace pushNotif(); it is additive. To fully activate:
-      //   1. Generate a VAPID key pair (e.g. `npx web-push generate-vapid-keys`)
-      //   2. Fill in VAPID_PUBLIC_KEY below
-      //   3. Deploy a server endpoint (e.g. a Cloud Function) that reads
-      //      subscriptions from flats/{flatId}/pushSubscriptions and
-      //      sends the actual push payload using the matching private key.
-      //   4. Call sendWebPushIfSubscribed(...) from your server function
-      //      (a client can request a push, but cannot deliver one itself).
-      const VAPID_PUBLIC_KEY = ""; // <-- put your VAPID public key here
-      let swRegistration = null;
-
-      async function registerServiceWorker() {
-        if (!("serviceWorker" in navigator)) return null;
-        if (!window.isSecureContext) return null; // push requires HTTPS
-        try {
-          const swCode = `
-            self.addEventListener('push', function (event) {
-              let data = {};
-              try { data = event.data ? event.data.json() : {}; } catch (e) {}
-              const title = data.title || 'Mess Manager';
-              const body = data.body || 'You have a new notification';
-              event.waitUntil(self.registration.showNotification(title, {
-                body,
-                icon: data.icon || undefined,
-                badge: data.badge || undefined,
-                data: data.url ? { url: data.url } : {},
-              }));
-            });
-            self.addEventListener('notificationclick', function (event) {
-              event.notification.close();
-              const url = (event.notification.data && event.notification.data.url) || '/';
-              event.waitUntil(clients.openWindow(url));
-            });
-          `;
-          const blob = new Blob([swCode], { type: "application/javascript" });
-          const swUrl = URL.createObjectURL(blob);
-          swRegistration = await navigator.serviceWorker.register(swUrl);
-          return swRegistration;
-        } catch (e) {
-          console.warn("Service worker registration failed:", e);
-          return null;
-        }
-      }
-
-      function urlBase64ToUint8Array(base64String) {
-        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-        const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-        const rawData = atob(base64);
-        return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
-      }
-
-      window.enablePushNotifications = async function () {
-        if (!VAPID_PUBLIC_KEY) {
-          toast("ℹ️ Push notifications need a VAPID key configured by the developer first.");
-          return;
-        }
-        if (!("Notification" in window)) {
-          toast("⚠️ This browser doesn't support notifications");
-          return;
-        }
-        const perm = await Notification.requestPermission();
-        if (perm !== "granted") {
-          toast("⚠️ Notification permission denied");
-          return;
-        }
-        const reg = swRegistration || (await registerServiceWorker());
-        if (!reg) {
-          toast("⚠️ Could not set up notifications (requires HTTPS)");
-          return;
-        }
-        try {
-          const sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-          });
-          await setDoc(
-            doc(db, "flats", FLAT_ID, "pushSubscriptions", currentUser.id),
-            { subscription: JSON.parse(JSON.stringify(sub)), updatedAt: Date.now() },
-          );
-          toast("✓ Push notifications enabled!");
-        } catch (e) {
-          toast("❌ Could not enable push: " + e.message);
-        }
-      };
-
-      // Called from pushNotif() above. With only client-side code, the
-      // browser cannot deliver a push to ANOTHER device by itself — that
-      // step needs a server (Cloud Function) using the VAPID private key.
-      // This function is a safe no-op placeholder until that server piece
-      // exists, so wiring it in now does not break anything.
-      function sendWebPushIfSubscribed(_memberId, _text) {
-        // Intentionally left as a no-op on the client. See comment above.
-      }
-
-      // Best-effort: try to register the service worker on load so it's
-      // ready once a VAPID key is configured. Never blocks the app.
-      if (window.isSecureContext) {
-        registerServiceWorker().catch(() => {});
-      }
 
       // ── Character Reveal Animation: "Bachelor Home" titles ──
       // Splits a heading's text into per-character <span>s and gives each
