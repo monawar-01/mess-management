@@ -2014,7 +2014,7 @@
                   <select
                     id="sheet-month-sel"
                     style="width: auto; padding: 6px 8px; font-size: 12px"
-                    onchange="renderSheet()"
+                    onchange="onViewMonthChange(this.value)"
                   ></select>
                   <button class="btn btn-ghost btn-sm" onclick="exportCSV()">
                     ⬇ Export
@@ -2321,7 +2321,7 @@
                 <select
                   id="baz-month-sel"
                   style="width: auto; padding: 6px 8px; font-size: 12px"
-                  onchange="renderBazHistory()"
+                  onchange="onViewMonthChange(this.value)"
                 ></select>
               </div>
               <div id="baz-history"></div>
@@ -2380,7 +2380,7 @@
                 <select
                   id="dep-month-sel"
                   style="width: auto; padding: 6px 8px; font-size: 12px"
-                  onchange="renderDepHistory()"
+                  onchange="onViewMonthChange(this.value)"
                 ></select>
               </div>
               <div id="dep-history"></div>
@@ -2473,7 +2473,7 @@
                 <select
                   id="bills-month-sel"
                   style="width: auto; padding: 6px 8px; font-size: 12px"
-                  onchange="renderBillsPage()"
+                  onchange="onViewMonthChange(this.value)"
                 ></select>
               </div>
               <div id="bills-history"></div>
@@ -2492,7 +2492,7 @@
                 <select
                   id="dash-month-sel"
                   style="width: auto; padding: 6px 8px; font-size: 12px; margin-top: 4px"
-                  onchange="renderDashboard()"
+                  onchange="onViewMonthChange(this.value)"
                 ></select>
               </div>
             </div>
@@ -2980,6 +2980,19 @@
         unsubs = [],
         currentTab = "sheet",
         dueCheckInterval = null;
+      // Shared "which month am I viewing" state used by every month-selector
+      // dropdown (Meal Sheet, Bazaar, Deposit, Bills, Dashboard). Changing the
+      // month on ANY one of these pages updates this single value, so every
+      // other page picks up the same month the next time it renders.
+      // null means "follow the current active month" (META.monthKey).
+      let VIEW_MONTH = null;
+      function getViewMonth() {
+        return VIEW_MONTH || (META && META.monthKey) || mkKey();
+      }
+      window.onViewMonthChange = function (val) {
+        VIEW_MONTH = val;
+        refresh();
+      };
 
       function mkKey() {
         const n = new Date();
@@ -3323,7 +3336,13 @@
         unsubs.push(
           onSnapshot(flatRef, (s) => {
             if (s.exists()) {
+              const prevMonthKey = META && META.monthKey;
               META = s.data();
+              if (prevMonthKey && META.monthKey && META.monthKey !== prevMonthKey) {
+                // New month rolled over (possibly triggered from another
+                // member's device) -- follow the fresh current month again.
+                VIEW_MONTH = null;
+              }
               applyRoleUI();
               refresh();
               maybeAutoNewMonth();
@@ -3775,8 +3794,8 @@
           MEMBERS.forEach((m) => {
             md[m.id] = {
               meals: 0,
-              // Always use SUMMARY_DEPOSITS for accurate balance
-              dep: SUMMARY_DEPOSITS.filter((d) => d.mid === m.id).reduce((a, d) => a + d.amt, 0),
+              // Balance resets fresh each month, so only count THIS month's deposits.
+              dep: SUMMARY_DEPOSITS.filter((d) => d.mid === m.id && (d.date || d.deposit_date || "").startsWith(mk)).reduce((a, d) => a + d.amt, 0),
             };
           });
           for (let d = 1; d <= days; d++) {
@@ -3938,7 +3957,7 @@
           if (p.length >= 2) keys.add(p[0] + "-" + p[1]);
         });
         const sorted = [...keys].sort((a, b) => b.localeCompare(a));
-        const cur = sel.value || META.monthKey;
+        const cur = getViewMonth();
         sel.innerHTML = sorted
           .map((k) => `<option value="${k}"${k === cur ? "selected" : ""}>${mkLabel(k)}</option>`)
           .join("");
@@ -3954,7 +3973,7 @@
           if (ds && ds.length >= 7) keys.add(ds.slice(0, 7));
         });
         const sorted = [...keys].sort((a, b) => b.localeCompare(a));
-        const cur = sel.value || META.monthKey;
+        const cur = getViewMonth();
         sel.innerHTML = sorted
           .map((k) => `<option value="${k}"${k === cur ? "selected" : ""}>${mkLabel(k)}</option>`)
           .join("");
@@ -3977,7 +3996,7 @@
       }
       function renderSheet() {
         buildSheetMonthSel();
-        const mk = document.getElementById("sheet-month-sel").value || META.monthKey;
+        const mk = getViewMonth();
         const days = daysInMonth(mk);
         const mgr = isManager();
         if (!MEMBERS.length) {
@@ -4064,7 +4083,7 @@
           const tot = mealsByDay[d];
           h += `<td style="padding:4px 2px;text-align:center;font-size:11px;font-weight:700;background:#fef9c3;color:#92400e">${tot || ""}</td>`;
         }
-        const tDep = MEMBERS.reduce((a, m) => a + SUMMARY_DEPOSITS.filter((d) => d.mid === m.id).reduce((s, d) => s + d.amt, 0), 0);
+        const tDep = MEMBERS.reduce((a, m) => a + SUMMARY_DEPOSITS.filter((d) => d.mid === m.id && (d.date || d.deposit_date || "").startsWith(mk)).reduce((s, d) => s + d.amt, 0), 0);
         h += `<td class="sh-total">${totalMeals}</td><td class="sh-cost">৳${rAfZ(totalCost, 0)}</td><td class="sh-cost">৳${tDep}</td><td class="sh-rate">৳${rAfZ(rate, 1)}/meal</td></tr></tbody></table>`;
         document.getElementById("sheet-container").innerHTML = h;
       }
@@ -4190,7 +4209,7 @@
       function renderBazHistory() {
         buildBazMonthSel();
         const el = document.getElementById("baz-history");
-        const mk = document.getElementById("baz-month-sel").value || META.monthKey;
+        const mk = getViewMonth();
         const sorted = BAZAAR.filter((b) => b.date.startsWith(mk)).sort((a, b) => b.date.localeCompare(a.date));
         if (!sorted.length) {
           el.innerHTML = '<div class="empty">No bazaar entries yet this month.</div>';
@@ -4299,7 +4318,7 @@
         const titleEl = document.getElementById("dep-history-title");
         const mgr = isManager();
 
-        const mk = document.getElementById("dep-month-sel").value || META.monthKey;
+        const mk = getViewMonth();
         const monthDeposits = DEPOSITS.filter((d) => (d.date || d.deposit_date || "").startsWith(mk));
         if (mgr) {
           if (titleEl) titleEl.innerHTML = "<span>📋 All Members' Deposits</span>";
@@ -4498,7 +4517,7 @@
         const hist = document.getElementById("bills-history");
         if (!hist) return;
 
-        const mk = document.getElementById("bills-month-sel").value || META.monthKey;
+        const mk = getViewMonth();
         const sorted = BILLS.filter((b) => b.date.startsWith(mk)).sort((a, b) => b.date.localeCompare(a.date));
 
         function buildMemberGroup(member, billRows) {
@@ -4575,7 +4594,7 @@
       // ── DASHBOARD (formerly Summary) ────────────────────────────
       function renderDashboard() {
         buildDashMonthSel();
-        const mk = document.getElementById("dash-month-sel").value || META.monthKey;
+        const mk = getViewMonth();
         document.getElementById("dash-month-sub").textContent = `Overview of meals, money & balances for ${mkLabel(mk)}`;
         const days = daysInMonth(mk);
         const md = {};
@@ -4767,13 +4786,14 @@
         });
         closeModal("nm-overlay");
         hideLoading();
+        VIEW_MONTH = null; // follow the new current month everywhere again
         const newMgr = MEMBERS.find((m) => m.id === newMgrId);
         toast(`✓ New month started! 👑 New Manager: ${newMgr ? newMgr.name : "?"}`);
       };
 
       // ── EXPORT ───────────────────────────────────────────────────
       window.exportCSV = function () {
-        const mk = document.getElementById("sheet-month-sel").value || META.monthKey;
+        const mk = getViewMonth();
         const days = daysInMonth(mk);
         let csv = `Mess Manager - ${mkLabel(mk)}\nMember,`;
         for (let d = 1; d <= days; d++) csv += `${d},`;
@@ -4793,7 +4813,7 @@
             meals += v;
           }
           const exp = meals * rate;
-          const dep = DEPOSITS.filter((d) => d.mid === m.id).reduce((a, d) => a + d.amt, 0);
+          const dep = SUMMARY_DEPOSITS.filter((d) => d.mid === m.id && (d.date || d.deposit_date || "").startsWith(mk)).reduce((a, d) => a + d.amt, 0);
           csv += row + meals + "," + rAfZ(exp, 0) + "," + dep + "," + rAfZ(dep - exp, 0) + "\n";
         });
         const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
