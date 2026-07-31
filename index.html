@@ -2316,7 +2316,14 @@
               </div>
             </div>
             <div class="card">
-              <div class="card-title"><span>📋 Bazaar History</span></div>
+              <div class="card-title">
+                <span>📋 Bazaar History</span>
+                <select
+                  id="baz-month-sel"
+                  style="width: auto; padding: 6px 8px; font-size: 12px"
+                  onchange="renderBazHistory()"
+                ></select>
+              </div>
               <div id="baz-history"></div>
             </div>
           </div>
@@ -2368,7 +2375,14 @@
               </div>
             </div>
             <div class="card">
-              <div class="card-title" id="dep-history-title"><span>📋 Deposit History</span></div>
+              <div class="card-title">
+                <span id="dep-history-title"><span>📋 Deposit History</span></span>
+                <select
+                  id="dep-month-sel"
+                  style="width: auto; padding: 6px 8px; font-size: 12px"
+                  onchange="renderDepHistory()"
+                ></select>
+              </div>
               <div id="dep-history"></div>
             </div>
           </div>
@@ -2456,6 +2470,11 @@
             <div class="card">
               <div class="card-title">
                 <span id="bills-history-title">📋 Bills History</span>
+                <select
+                  id="bills-month-sel"
+                  style="width: auto; padding: 6px 8px; font-size: 12px"
+                  onchange="renderBillsPage()"
+                ></select>
               </div>
               <div id="bills-history"></div>
             </div>
@@ -2469,8 +2488,12 @@
                 <div class="dash-hero-sub" id="dash-month-sub">Overview of meals, money &amp; balances</div>
               </div>
               <div style="text-align: right">
-                <div style="font-size: 11px; color: rgba(255,255,255,.65); text-transform: uppercase; letter-spacing: .5px">This Month</div>
-                <div style="font-size: 18px; font-weight: 800; color: var(--gold-soft)" id="dash-month-label2"></div>
+                <div style="font-size: 11px; color: rgba(255,255,255,.65); text-transform: uppercase; letter-spacing: .5px">Month</div>
+                <select
+                  id="dash-month-sel"
+                  style="width: auto; padding: 6px 8px; font-size: 12px; margin-top: 4px"
+                  onchange="renderDashboard()"
+                ></select>
               </div>
             </div>
             <div class="stats-grid" id="sum-stats"></div>
@@ -3920,6 +3943,38 @@
           .map((k) => `<option value="${k}"${k === cur ? "selected" : ""}>${mkLabel(k)}</option>`)
           .join("");
       }
+      // Generic month-selector builder: always includes the current month plus
+      // every month key found in the given list of date strings ("YYYY-MM-DD"),
+      // so past months stay browsable even after a new month starts.
+      function buildMonthSelector(selId, dateStrings) {
+        const sel = document.getElementById(selId);
+        if (!sel) return;
+        const keys = new Set([META.monthKey]);
+        dateStrings.forEach((ds) => {
+          if (ds && ds.length >= 7) keys.add(ds.slice(0, 7));
+        });
+        const sorted = [...keys].sort((a, b) => b.localeCompare(a));
+        const cur = sel.value || META.monthKey;
+        sel.innerHTML = sorted
+          .map((k) => `<option value="${k}"${k === cur ? "selected" : ""}>${mkLabel(k)}</option>`)
+          .join("");
+      }
+      function buildBazMonthSel() {
+        buildMonthSelector("baz-month-sel", BAZAAR.map((b) => b.date));
+      }
+      function buildDepMonthSel() {
+        buildMonthSelector("dep-month-sel", DEPOSITS.map((d) => d.date || d.deposit_date || ""));
+      }
+      function buildBillsMonthSel() {
+        buildMonthSelector("bills-month-sel", BILLS.map((b) => b.date));
+      }
+      function buildDashMonthSel() {
+        buildMonthSelector("dash-month-sel", [
+          ...BAZAAR.map((b) => b.date),
+          ...SUMMARY_DEPOSITS.map((d) => d.date || d.deposit_date || ""),
+          ...Object.keys(MEALS),
+        ]);
+      }
       function renderSheet() {
         buildSheetMonthSel();
         const mk = document.getElementById("sheet-month-sel").value || META.monthKey;
@@ -3942,8 +3997,9 @@
           md[m.id] = {
             meals: 0,
             exp: 0,
-            // Always use SUMMARY_DEPOSITS (unfiltered) so all members see everyone's deposit/balance
-            dep: SUMMARY_DEPOSITS.filter((d) => d.mid === m.id).reduce((a, d) => a + d.amt, 0),
+            // Always use SUMMARY_DEPOSITS (unfiltered) so all members see everyone's deposit/balance,
+            // scoped to the CURRENT month only.
+            dep: SUMMARY_DEPOSITS.filter((d) => d.mid === m.id && (d.date || d.deposit_date || "").startsWith(mk)).reduce((a, d) => a + d.amt, 0),
           };
         });
         for (let d = 1; d <= days; d++) {
@@ -4132,10 +4188,12 @@
         renderBazHistory();
       }
       function renderBazHistory() {
+        buildBazMonthSel();
         const el = document.getElementById("baz-history");
-        const sorted = [...BAZAAR].sort((a, b) => b.date.localeCompare(a.date));
+        const mk = document.getElementById("baz-month-sel").value || META.monthKey;
+        const sorted = BAZAAR.filter((b) => b.date.startsWith(mk)).sort((a, b) => b.date.localeCompare(a.date));
         if (!sorted.length) {
-          el.innerHTML = '<div class="empty">No bazaar entries yet.</div>';
+          el.innerHTML = '<div class="empty">No bazaar entries yet this month.</div>';
           return;
         }
         const mgr = isManager();
@@ -4236,19 +4294,22 @@
         toast("Deposit deleted");
       };
       function renderDepHistory() {
+        buildDepMonthSel();
         const el = document.getElementById("dep-history");
         const titleEl = document.getElementById("dep-history-title");
         const mgr = isManager();
 
+        const mk = document.getElementById("dep-month-sel").value || META.monthKey;
+        const monthDeposits = DEPOSITS.filter((d) => (d.date || d.deposit_date || "").startsWith(mk));
         if (mgr) {
           if (titleEl) titleEl.innerHTML = "<span>📋 All Members' Deposits</span>";
-          if (!DEPOSITS.length) {
-            el.innerHTML = '<div class="empty">No deposits yet.</div>';
+          if (!monthDeposits.length) {
+            el.innerHTML = '<div class="empty">No deposits yet this month.</div>';
             return;
           }
           let html = "";
           MEMBERS.forEach((m) => {
-            const memberDeps = DEPOSITS.filter((d) => d.mid === m.id)
+            const memberDeps = monthDeposits.filter((d) => d.mid === m.id)
               .sort((a, b) => (b.date || b.deposit_date || "").localeCompare(a.date || a.deposit_date || ""));
             const total = memberDeps.reduce((a, d) => a + d.amt, 0);
             html += `<div style="margin-bottom:18px">
@@ -4280,10 +4341,10 @@
         } else {
           // Member: শুধু নিজের deposit দেখবে (original behaviour)
           if (titleEl) titleEl.innerHTML = "<span>📋 My Deposit History</span>";
-          const myDeps = DEPOSITS.filter((d) => d.mid === currentUser?.id)
+          const myDeps = monthDeposits.filter((d) => d.mid === currentUser?.id)
             .sort((a, b) => (b.date || b.deposit_date || "").localeCompare(a.date || a.deposit_date || ""));
           if (!myDeps.length) {
-            el.innerHTML = '<div class="empty">You have no deposits yet.</div>';
+            el.innerHTML = '<div class="empty">You have no deposits yet this month.</div>';
             return;
           }
           const total = myDeps.reduce((a, d) => a + d.amt, 0);
@@ -4430,13 +4491,15 @@
       function renderBillsPage() {
         const mgr = isManager();
         fillBillRentMemberSelect();
+        buildBillsMonthSel();
         const titleEl = document.getElementById("bills-history-title");
         if (titleEl)
           titleEl.innerHTML = mgr ? "<span>&#x1F4CB; Bill History (All Members)</span>" : "<span>&#x1F4CB; My Bill History</span>";
         const hist = document.getElementById("bills-history");
         if (!hist) return;
 
-        const sorted = [...BILLS].sort((a, b) => b.date.localeCompare(a.date));
+        const mk = document.getElementById("bills-month-sel").value || META.monthKey;
+        const sorted = BILLS.filter((b) => b.date.startsWith(mk)).sort((a, b) => b.date.localeCompare(a.date));
 
         function buildMemberGroup(member, billRows) {
           const isSelf = member.id === currentUser?.id;
@@ -4478,7 +4541,7 @@
 
         if (mgr) {
           if (!sorted.length) {
-            hist.innerHTML = '<div class="empty">No bills added yet.</div>';
+            hist.innerHTML = '<div class="empty">No bills added yet this month.</div>';
             return;
           }
           let html = "";
@@ -4496,7 +4559,7 @@
             .filter(function(b) { return b.shares && b.shares[me.id] !== undefined; })
             .map(function(b) { return { bill: b, amt: b.shares[me.id] }; });
           if (!myRows.length) {
-            hist.innerHTML = '<div class="empty">No bills for you yet.</div>';
+            hist.innerHTML = '<div class="empty">No bills for you yet this month.</div>';
             return;
           }
           const myTotal = myRows.reduce(function(a, r) { return a + r.amt; }, 0);
@@ -4511,9 +4574,9 @@
 
       // ── DASHBOARD (formerly Summary) ────────────────────────────
       function renderDashboard() {
-        document.getElementById("dash-month-sub").textContent = `Overview of meals, money & balances for ${mkLabel(META.monthKey)}`;
-        document.getElementById("dash-month-label2").textContent = mkLabel(META.monthKey) || "";
-        const mk = META.monthKey;
+        buildDashMonthSel();
+        const mk = document.getElementById("dash-month-sel").value || META.monthKey;
+        document.getElementById("dash-month-sub").textContent = `Overview of meals, money & balances for ${mkLabel(mk)}`;
         const days = daysInMonth(mk);
         const md = {};
         MEMBERS.forEach((m) => {
@@ -4522,7 +4585,8 @@
             exp: 0,
             // Dashboard is a shared view: always read from the unfiltered SUMMARY_DEPOSITS,
             // never from DEPOSITS (which is intentionally restricted for the Deposit module).
-            dep: SUMMARY_DEPOSITS.filter((d) => d.mid === m.id).reduce((a, d) => a + d.amt, 0),
+            // Also scoped to the CURRENT month only, so a new month starts clean.
+            dep: SUMMARY_DEPOSITS.filter((d) => d.mid === m.id && (d.date || d.deposit_date || "").startsWith(mk)).reduce((a, d) => a + d.amt, 0),
           };
         });
         for (let d = 1; d <= days; d++) {
@@ -4955,6 +5019,19 @@
         applyBrandRevealAnimation(document.getElementById("sidebar-brand-title"));
         applyBrandRevealAnimation(document.getElementById("mt-title"));
       })();
+
+      // ── Expose month-selector re-render functions globally ──────────
+      // This is a <script type="module">, so plain top-level `function` declarations
+      // are scoped to the module, not attached to `window`. Inline HTML attributes like
+      // onchange="renderBazHistory()" run in the GLOBAL scope, so without this they
+      // silently fail to find the function (the dropdown's value still changes in the
+      // DOM, but the view doesn't re-render until something else -- like switching tabs
+      // and back -- happens to call the function again from within module scope).
+      window.renderSheet = renderSheet;
+      window.renderBazHistory = renderBazHistory;
+      window.renderDepHistory = renderDepHistory;
+      window.renderBillsPage = renderBillsPage;
+      window.renderDashboard = renderDashboard;
     </script>
   </body>
 </html>
